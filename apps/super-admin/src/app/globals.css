@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Backgrounds & surfaces (light) */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 20%;
+
+    /* Brand: usamos brand-red como primary (es el color de acento del logo) */
+    --primary: 354 91% 61%; /* #f64151 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 20%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 174 70% 49%; /* #1cddbe brand-teal */
+    --accent-foreground: 0 0% 15%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 354 91% 61%;
+
+    --radius: 0.625rem;
+
+    /* Sidebar (light) */
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 0 0% 20%;
+    --sidebar-accent: 0 0% 94%;
+    --sidebar-border: 0 0% 90%;
+
+    /* Brand crudos (para usar con bg-brand-*) */
+    --brand-gray: 0 0% 20%;
+    --brand-red: 354 91% 61%;
+    --brand-yellow: 43 97% 58%;
+    --brand-purple: 247 84% 58%;
+    --brand-teal: 174 70% 49%;
+  }
+
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 9%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 354 91% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 64%;
+
+    --accent: 174 70% 49%;
+    --accent-foreground: 0 0% 7%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 354 91% 65%;
+
+    --sidebar: 0 0% 9%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-border: 0 0% 18%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Wordmark ENTERAR.ME — el punto entre AR y ME se renderiza en rojo */
+  .wordmark {
+    @apply font-bold tracking-tight text-foreground;
+  }
+  .wordmark .dot {
+    @apply text-brand-red;
+  }
+
+  /* Scrollbar custom */
+  .scroll-area {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
+  }
+  .scroll-area::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scroll-area::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 9999px;
+  }
+  .scroll-area::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+  .scroll-area::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Gradiente sutil del logo */
+  .brand-gradient {
+    background: linear-gradient(
+      90deg,
+      hsl(43 97% 58%) 0%,
+      hsl(174 70% 49%) 33%,
+      hsl(247 84% 58%) 66%,
+      hsl(354 91% 61%) 100%
+    );
+  }
+
+  .glass {
+    @apply bg-background/80 backdrop-blur-md;
+  }
+}
