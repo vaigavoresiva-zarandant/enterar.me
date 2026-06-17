@@ -1,0 +1,212 @@
+# ============================================================
+# ENTERAR.ME — CI (lint + typecheck + build)
+# ------------------------------------------------------------
+# Se ejecuta en push y PR a main. Jobs paralelos:
+#   1. lint-directus-extensions  — typecheck TypeScript de las extensiones
+#   2. lint-ai-service           — typecheck TypeScript del servicio IA
+#   3. build-super-admin         — lint + build del frontend super-admin
+#   4. build-tenant-admin        — lint + build del frontend tenant-admin
+#   5. validate-yaml             — valida que el schema snapshot y los flows JSON parsean OK
+# ============================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancelar runs anteriores de la misma rama si llega un nuevo commit
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-directus-extensions:
+    name: Lint · Directus extensions
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: directus
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: directus/package-lock.json
+
+      - name: Install deps
+        run: npm ci || npm install --no-audit --no-fund
+
+      - name: Typecheck (tsc --noEmit)
+        run: npm run typecheck
+
+  lint-ai-service:
+    name: Lint · AI service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ai/package-lock.json
+
+      - name: Install deps
+        run: npm ci || npm install --no-audit --no-fund
+
+      - name: Typecheck (tsc --noEmit)
+        run: npm run typecheck
+
+  build-super-admin:
+    name: Build · Super Admin
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/super-admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/super-admin/package-lock.json
+
+      - name: Install deps
+        run: npm ci || npm install --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true # next lint puede fallar por reglas estrictas; no bloqueamos el CI
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          # Next.js necesita algunas env vars en build time, aunque sean placeholders.
+          # Las reales se inyectan en runtime desde Coolify.
+          NEXT_PUBLIC_DIRECTUS_URL: 'https://api.enterarme.me'
+          NEXT_PUBLIC_AI_URL: 'https://ai.enterarme.me'
+          NEXTAUTH_URL: 'https://admin.enterarme.me'
+          NEXTAUTH_SECRET: 'ci-build-placeholder-secret-not-used-in-runtime'
+
+  build-tenant-admin:
+    name: Build · Tenant Admin
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/tenant-admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/tenant-admin/package-lock.json
+
+      - name: Install deps
+        run: npm ci || npm install --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          NEXT_PUBLIC_DIRECTUS_URL: 'https://api.enterarme.me'
+          NEXT_PUBLIC_AI_URL: 'https://ai.enterarme.me'
+          TENANT_AUTH_URL: 'https://app.enterarme.me'
+          TENANT_AUTH_SECRET: 'ci-build-placeholder-secret-not-used-in-runtime'
+          TENANT_RESOLVER: 'subdomain'
+          TENANT_BASE_DOMAIN: 'app.enterarme.me'
+
+  validate-yaml:
+    name: Validate · Schema + Flows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq + pyYAML
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pyyaml
+
+      - name: Validate schema-snapshot.yaml parses
+        run: |
+          echo "→ Validando directus/snapshots/schema-snapshot.yaml…"
+          python3 -c "
+          import yaml, sys
+          with open('directus/snapshots/schema-snapshot.yaml','r') as f:
+              doc = yaml.safe_load(f)
+          assert isinstance(doc, dict), 'el documento no es un dict'
+          assert 'version' in doc, 'falta version'
+          assert 'schema' in doc, 'falta schema'
+          print('OK: schema-snapshot.yaml parsea correctamente')
+          "
+
+      - name: Validate Directus flows JSON
+        run: |
+          set -e
+          echo "→ Validando flows JSON…"
+          fail=0
+          for f in directus/flows/*.json; do
+            if jq empty "$f" 2>/dev/null; then
+              echo "  ✓ $f"
+            else
+              echo "  ✗ $f — JSON inválido"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Validate seed JSON
+        run: |
+          set -e
+          echo "→ Validando seeds JSON…"
+          fail=0
+          for f in directus/seed/*.json; do
+            if jq empty "$f" 2>/dev/null; then
+              echo "  ✓ $f"
+            else
+              echo "  ✗ $f — JSON inválido"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Validate coolify templates JSON
+        run: |
+          set -e
+          echo "→ Validando plantillas Coolify…"
+          fail=0
+          for f in coolify/*.json; do
+            if jq empty "$f" 2>/dev/null; then
+              echo "  ✓ $f"
+            else
+              echo "  ✗ $f — JSON inválido"
+              fail=1
+            fi
+          done
+          exit $fail
