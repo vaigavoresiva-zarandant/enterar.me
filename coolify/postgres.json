@@ -1,0 +1,55 @@
+{
+  "_coolify": {
+    "name": "ENTERAR.ME — PostgreSQL",
+    "description": "PostgreSQL 16 con extensión pgvector. Recomendado: usar el servicio gestionado 'PostgreSQL' de Coolify (New Resource → Database → PostgreSQL). Esta plantilla compose es alternativa para levantarlo manualmente.",
+    "type": "docker-compose",
+    "projectName": "enterarme",
+    "serviceName": "postgres",
+    "preferred": "coolify-managed-postgres"
+  },
+  "name": "ENTERAR.ME — PostgreSQL (alternativa self-hosted)",
+  "description": "PostgreSQL 16 con pgvector para Directus + AI service. Coolify ofrece PostgreSQL gestionado con backups automáticos — preferir esa opción. Esta plantilla es para despliegues manuales / staging.",
+  "services": {
+    "postgres": {
+      "image": "pgvector/pgvector:pg16",
+      "restart": "unless-stopped",
+      "ports": [
+        "5432:5432"
+      ],
+      "environment": {
+        "POSTGRES_USER": "${POSTGRES_USER:-enterarme}",
+        "POSTGRES_PASSWORD": "${POSTGRES_PASSWORD}",
+        "POSTGRES_DB": "${POSTGRES_DB:-enterarme}",
+        "TZ": "${TZ:-Europe/Madrid}",
+        "PGDATA": "/var/lib/postgresql/data"
+      },
+      "volumes": [
+        "postgres_data:/var/lib/postgresql/data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-enterarme} -d ${POSTGRES_DB:-enterarme}"
+        ],
+        "interval": "5s",
+        "timeout": "5s",
+        "retries": 10
+      },
+      "labels": [
+        "coolify.managed=true",
+        "coolify.serviceName=postgres",
+        "enterarme.component=database"
+      ]
+    }
+  },
+  "volumes": {
+    "postgres_data": {
+      "driver": "local"
+    }
+  },
+  "_post_start": [
+    "Una vez levantado, crear la extensión pgvector (necesaria para el RAG del servicio AI):",
+    "  docker compose exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'CREATE EXTENSION IF NOT EXISTS vector;'",
+    "Coolify PostgreSQL gestionado: ejecutar el mismo CREATE EXTENSION desde el panel SQL o desde el AI service al arrancar (db.ts lo intenta con IF NOT EXISTS)."
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://directus.io/schema/seed.json",
+  "comment": "Planes de suscripción del SaaS ENTERAR.ME. Aplicar con: npx directus seed:import -s seed/planes.json o cargar vía API. Los UUIDs son fijos para que el marketplace, los flows y los tests puedan referenciarlos.",
+  "planes": [
+    {
+      "id": "11111111-1000-1000-1000-000000000001",
+      "nombre": "Starter",
+      "precio_mensual": 19,
+      "max_usuarios": 3,
+      "max_ubicaciones": 1,
+      "max_materiales": 50,
+      "caracteristicas": {
+        "usuarios_externos": "ilimitado",
+        "tareas": "ilimitado",
+        "agente_ia": false,
+        "informes_basicos": true,
+        "informes_avanzados": false,
+        "soporte": "email",
+        "almacenamiento_gb": 1,
+        "marketplace": true,
+        "trazabilidad": true
+      },
+      "activo": true,
+      "sort": 1
+    },
+    {
+      "id": "22222222-2000-2000-2000-000000000002",
+      "nombre": "Pro",
+      "precio_mensual": 79,
+      "max_usuarios": 25,
+      "max_ubicaciones": 10,
+      "max_materiales": 1000,
+      "caracteristicas": {
+        "usuarios_externos": "ilimitado",
+        "tareas": "ilimitado",
+        "agente_ia": true,
+        "informes_basicos": true,
+        "informes_avanzados": true,
+        "soporte": "chat",
+        "almacenamiento_gb": 25,
+        "marketplace": true,
+        "trazabilidad": true,
+        "rag": true,
+        "api_webhooks": true
+      },
+      "activo": true,
+      "sort": 2
+    },
+    {
+      "id": "33333333-3000-3000-3000-000000000003",
+      "nombre": "Enterprise",
+      "precio_mensual": 299,
+      "max_usuarios": -1,
+      "max_ubicaciones": -1,
+      "max_materiales": -1,
+      "caracteristicas": {
+        "usuarios_externos": "ilimitado",
+        "tareas": "ilimitado",
+        "agente_ia": true,
+        "informes_basicos": true,
+        "informes_avanzados": true,
+        "soporte": "dedicado",
+        "almacenamiento_gb": -1,
+        "marketplace": true,
+        "trazabilidad": true,
+        "rag": true,
+        "api_webhooks": true,
+        "sso": true,
+        "auditoria": true,
+        "white_label": true,
+        "multi_moneda": true
+      },
+      "activo": true,
+      "sort": 3
+    }
+  ]
+}

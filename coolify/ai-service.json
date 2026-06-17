@@ -1,0 +1,55 @@
+{
+  "_coolify": {
+    "name": "ENTERAR.ME — AI Service",
+    "description": "Servicio IA (Fastify + Ollama) con RAG, skills y agente orquestador. Puerto 3030. Depende de Postgres (pgvector) y de Ollama externo (Railway).",
+    "type": "docker-compose",
+    "projectName": "enterarme",
+    "serviceName": "ai",
+    "documentation": "https://github.com/ollama/ollama/blob/main/docs/api.md"
+  },
+  "name": "ENTERAR.ME — AI Service",
+  "description": "Servicio IA de ENTERAR.ME: RAG sobre base de conocimiento del tenant, skills operativas y agente orquestador con function-calling. Llama a Ollama (Railway) y Postgres (pgvector).",
+  "services": {
+    "ai": {
+      "image": "ghcr.io/enterarme/enterarme-ai:latest",
+      "restart": "unless-stopped",
+      "ports": [
+        "3030:3030"
+      ],
+      "environment": {
+        "PORT": "3030",
+        "NODE_ENV": "production",
+        "DATABASE_URL": "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}",
+        "OLLAMA_HOST": "${OLLAMA_HOST}",
+        "OLLAMA_API_KEY": "${OLLAMA_API_KEY}",
+        "OLLAMA_MODEL": "${OLLAMA_MODEL:-enterarme-agent}",
+        "OLLAMA_EMBED_MODEL": "${OLLAMA_EMBED_MODEL:-nomic-embed-text}",
+        "DIRECTUS_URL": "${DIRECTUS_URL:-http://directus:8055}",
+        "DIRECTUS_SERVICE_TOKEN": "${DIRECTUS_SERVICE_TOKEN}",
+        "JWT_SECRET": "${DIRECTUS_SECRET}",
+        "CORS_ORIGINS": "${AI_CORS_ORIGINS:-https://admin.enterarme.me,https://app.enterarme.me}",
+        "AGENT_MAX_TOOL_ITERATIONS": "${AGENT_MAX_TOOL_ITERATIONS:-5}",
+        "RAG_TOP_K": "${RAG_TOP_K:-5}",
+        "TZ": "${TZ:-Europe/Madrid}"
+      },
+      "depends_on": [
+        "postgres"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:'+(process.env.PORT||3030)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": 5,
+        "start_period": "30s"
+      },
+      "labels": [
+        "coolify.managed=true",
+        "coolify.serviceName=ai",
+        "enterarme.component=ai"
+      ]
+    }
+  }
+}

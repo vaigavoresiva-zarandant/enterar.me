@@ -1,0 +1,64 @@
+{
+  "_coolify": {
+    "name": "ENTERAR.ME — Tenant Admin Frontend",
+    "description": "Frontend Next.js standalone del panel tenant-admin (clientes). Puerto 3000 interno (mapear a 3001 en dev). Necesita WILDCARD DOMAIN *.app.enterarme.me para resolver tenant por subdominio.",
+    "type": "docker-compose",
+    "projectName": "enterarme",
+    "serviceName": "tenant-admin",
+    "documentation": "https://nextjs.org/docs/app/api-reference/config/next-config-js/output",
+    "wildcardDomain": "*.app.enterarme.me"
+  },
+  "name": "ENTERAR.ME — Tenant Admin Frontend",
+  "description": "Panel de administración de tenant (cliente de ENTERAR.ME). Gestiona ubicaciones, usuarios externos/internos, materiales, stock, tareas, informes y agente IA. Resuelve el tenant por subdominio (miempresa.app.enterarme.me).",
+  "services": {
+    "tenant-admin": {
+      "image": "ghcr.io/enterarme/enterarme-tenant-admin:latest",
+      "restart": "unless-stopped",
+      "ports": [
+        "3001:3000"
+      ],
+      "environment": {
+        "NODE_ENV": "production",
+        "PORT": "3000",
+        "HOSTNAME": "0.0.0.0",
+        "NEXT_PUBLIC_DIRECTUS_URL": "${DIRECTUS_PUBLIC_URL}",
+        "NEXT_PUBLIC_AI_URL": "${AI_PUBLIC_URL}",
+        "DIRECTUS_SERVICE_TOKEN": "${DIRECTUS_FRONTEND_TOKEN}",
+        "DIRECTUS_URL": "${DIRECTUS_URL:-http://directus:8055}",
+        "AI_URL": "${AI_URL:-http://ai:3030}",
+        "TENANT_AUTH_URL": "${TENANT_ADMIN_PUBLIC_URL}",
+        "TENANT_AUTH_SECRET": "${TENANT_AUTH_SECRET}",
+        "TENANT_RESOLVER": "${TENANT_RESOLVER:-subdomain}",
+        "TENANT_BASE_DOMAIN": "${TENANT_BASE_DOMAIN:-app.enterarme.me}",
+        "TZ": "${TZ:-Europe/Madrid}",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "depends_on": [
+        "directus",
+        "ai"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:3000/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))\""
+        ],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": 5,
+        "start_period": "30s"
+      },
+      "labels": [
+        "coolify.managed=true",
+        "coolify.serviceName=tenant-admin",
+        "enterarme.component=frontend",
+        "enterarme.role=tenant-admin",
+        "enterarme.wildcard=true"
+      ]
+    }
+  },
+  "_notes": [
+    "Para servir por subdominio (*.app.enterarme.me) hace falta un registro DNS wildcard A/CNAME apuntando al VPS de Coolify y un certificado wildcard Let's Encrypt.",
+    "En Coolify v4: al configurar el dominio del servicio, activar 'Generate Wildcard Certificate' o subir un cert wildcard manual.",
+    "Sin wildcard, el frontend cae al modo 'path' (TENANT_RESOLVER=path y URLs tipo app.enterarme.me/?tenant=miempresa)."
+  ]
+}

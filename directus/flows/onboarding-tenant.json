@@ -1,0 +1,58 @@
+{
+  "$schema": "https://directus.io/schema/flow.json",
+  "name": "ENTERAR.ME — Onboarding de Tenant",
+  "icon": "rocket_launch",
+  "color": "#4c2eec",
+  "description": "Flow manual que ejecuta el onboarding completo de un nuevo tenant llamando al endpoint custom /onboarding/tenant. Equivalente visual al endpoint extensions/endpoints/enterarme-onboarding.",
+  "status": "active",
+  "trigger": "manual",
+  "accountability": "all",
+  "options": {
+    "body": {
+      "nombre": "{{$trigger.body.nombre}}",
+      "slug": "{{$trigger.body.slug}}",
+      "plan_id": "{{$trigger.body.plan_id}}",
+      "admin_email": "{{$trigger.body.admin_email}}",
+      "admin_password": "{{$trigger.body.admin_password}}",
+      "sector_id": "{{$trigger.body.sector_id}}"
+    }
+  },
+  "operation": {
+    "id": "op-onboarding-call-endpoint",
+    "name": "Llamar endpoint /onboarding/tenant",
+    "key": "llamar_endpoint_onboarding",
+    "type": "request",
+    "options": {
+      "method": "POST",
+      "url": "{{$env.PUBLIC_URL}}/onboarding/tenant",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Authorization", "value": "Bearer {{$env.DIRECTUS_SERVICE_TOKEN}}" }
+      ],
+      "body": "{\n  \"nombre\": \"{{$trigger.body.nombre}}\",\n  \"slug\": \"{{$trigger.body.slug}}\",\n  \"plan_id\": \"{{$trigger.body.plan_id}}\",\n  \"admin_email\": \"{{$trigger.body.admin_email}}\",\n  \"admin_password\": \"{{$trigger.body.admin_password}}\",\n  \"sector_id\": \"{{$trigger.body.sector_id}}\"\n}",
+      "responseBody": "json"
+    },
+    "resolve": {
+      "id": "op-onboarding-log",
+      "name": "Log resultado",
+      "key": "log_resultado",
+      "type": "log",
+      "options": {
+        "message": "Onboarding completado: {{$last.data.tenant_id}} — admin: {{$last.data.admin_user_id}}"
+      },
+      "resolve": null,
+      "reject": null
+    },
+    "reject": {
+      "id": "op-onboarding-error",
+      "name": "Log error",
+      "key": "log_error",
+      "type": "log",
+      "options": {
+        "message": "Error en onboarding: {{$last.error}}"
+      },
+      "resolve": null,
+      "reject": null
+    }
+  }
+}

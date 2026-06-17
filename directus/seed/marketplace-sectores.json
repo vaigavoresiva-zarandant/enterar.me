@@ -1,0 +1,229 @@
+{
+  "$schema": "https://directus.io/schema/seed.json",
+  "comment": "Sectores del marketplace + plantillas aplicables. 4 sectores (Construcción, Hostelería, Taller mecánico, Limpieza) con 2-3 plantillas cada uno. Aplicar con: npx directus seed:import -s seed/marketplace-sectores.json o cargar vía API. Los UUIDs son fijos para tests y referencias.",
+  "sectores_mercado": [
+    {
+      "id": "aaaa0000-0000-0000-0000-000000000001",
+      "nombre": "Construcción y reformas",
+      "slug": "construccion-reformas",
+      "descripcion": "Sector de construcción, obras y reformas. Plantillas de materiales (andamios, herramientas), pipelines de alta de obra y tareas de revisión.",
+      "icono": "construction",
+      "activo": true,
+      "sort": 1
+    },
+    {
+      "id": "bbbb0000-0000-0000-0000-000000000002",
+      "nombre": "Hostelería",
+      "slug": "hosteleria",
+      "descripcion": "Restaurantes, cafeterías, hoteles. Plantillas de materiales fungibles (ingredientes, productos de limpieza), tareas de apertura/cierre y pipelines de alta de local.",
+      "icono": "restaurant",
+      "activo": true,
+      "sort": 2
+    },
+    {
+      "id": "cccc0000-0000-0000-0000-000000000003",
+      "nombre": "Taller mecánico",
+      "slug": "taller-mecanico",
+      "descripcion": "Talleres de coche, moto y maquinaria. Plantillas de materiales (recambios, aceites), tareas de revisión y pipelines de recepción de vehículos.",
+      "icono": "car_repair",
+      "activo": true,
+      "sort": 3
+    },
+    {
+      "id": "dddd0000-0000-0000-0000-000000000004",
+      "nombre": "Limpieza profesional",
+      "slug": "limpieza-profesional",
+      "descripcion": "Empresas de limpieza de comunidades, oficinas y naves. Plantillas de materiales (productos, utensilios), tareas de rutina y pipelines de alta de cliente.",
+      "icono": "cleaning_services",
+      "activo": true,
+      "sort": 4
+    }
+  ],
+  "plantillas_mercado": [
+    {
+      "id": "aa110000-0000-0000-0000-000000000001",
+      "sector_id": "aaaa0000-0000-0000-0000-000000000001",
+      "nombre": "Andamio",
+      "tipo": "material",
+      "configuracion": {
+        "nombre": "Andamio metálico",
+        "tipo": "no_fungible",
+        "sku": "ANDAMIO-MET-001",
+        "unidad": "ud",
+        "costo_unitario": 350,
+        "metadata": { "categoria": "estructura", "vida_util_anos": 10 }
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 1
+    },
+    {
+      "id": "aa110000-0000-0000-0000-000000000002",
+      "sector_id": "aaaa0000-0000-0000-0000-000000000001",
+      "nombre": "Revisión inicial de obra",
+      "tipo": "tarea",
+      "configuracion": {
+        "titulo": "Revisión inicial de obra",
+        "descripcion": "Inspección inicial del estado de la obra: mediciones, fotos, identificación de riesgos.",
+        "prioridad": "alta",
+        "duracion_minutos": 120,
+        "metadata": { "categoria": "inspeccion", "checklist": ["mediciones", "fotos", "riesgos"] }
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 2
+    },
+    {
+      "id": "aa110000-0000-0000-0000-000000000003",
+      "sector_id": "aaaa0000-0000-0000-0000-000000000001",
+      "nombre": "Alta de obra",
+      "tipo": "pipeline",
+      "configuracion": {
+        "pasos": [
+          { "orden": 1, "accion": "crear_ubicacion", "tipo": "obra" },
+          { "orden": 2, "accion": "crear_usuario_externo", "tipo": "cliente" },
+          { "orden": 3, "accion": "asignar_materiales", "plantillas": ["Andamio"] },
+          { "orden": 4, "accion": "crear_tarea", "plantilla": "Revisión inicial de obra" }
+        ]
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 3
+    },
+
+    {
+      "id": "bb220000-0000-0000-0000-000000000001",
+      "sector_id": "bbbb0000-0000-0000-0000-000000000002",
+      "nombre": "Aceite de cocina (5L)",
+      "tipo": "material",
+      "configuracion": {
+        "nombre": "Aceite de oliva 5L",
+        "tipo": "fungible",
+        "sku": "ACEITE-OLIVA-5L",
+        "unidad": "ud",
+        "costo_unitario": 28.5,
+        "metadata": { "categoria": "ingrediente", "alergeno": true }
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 1
+    },
+    {
+      "id": "bb220000-0000-0000-0000-000000000002",
+      "sector_id": "bbbb0000-0000-0000-0000-000000000002",
+      "nombre": "Apertura de local",
+      "tipo": "tarea",
+      "configuracion": {
+        "titulo": "Apertura de local",
+        "descripcion": "Tarea de apertura: encender equipos, revisar stock de ingredientes, limpieza inicial.",
+        "prioridad": "media",
+        "duracion_minutos": 30,
+        "metadata": { "categoria": "rutina", "frecuencia": "diaria" }
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 2
+    },
+    {
+      "id": "bb220000-0000-0000-0000-000000000003",
+      "sector_id": "bbbb0000-0000-0000-0000-000000000002",
+      "nombre": "Alta de local con cocina",
+      "tipo": "pipeline",
+      "configuracion": {
+        "pasos": [
+          { "orden": 1, "accion": "crear_ubicacion", "tipo": "local" },
+          { "orden": 2, "accion": "crear_usuario_externo", "tipo": "cliente" },
+          { "orden": 3, "accion": "crear_tarea", "plantilla": "Apertura de local" },
+          { "orden": 4, "accion": "instalar_plantillas", "plantillas": ["Aceite de cocina (5L)"] }
+        ]
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 3
+    },
+
+    {
+      "id": "cc330000-0000-0000-0000-000000000001",
+      "sector_id": "cccc0000-0000-0000-0000-000000000003",
+      "nombre": "Aceite motor 5W30 (4L)",
+      "tipo": "material",
+      "configuracion": {
+        "nombre": "Aceite motor 5W30 4L",
+        "tipo": "fungible",
+        "sku": "ACEITE-MOTOR-5W30-4L",
+        "unidad": "ud",
+        "costo_unitario": 35,
+        "metadata": { "categoria": "recambio", "fluid": true }
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 1
+    },
+    {
+      "id": "cc330000-0000-0000-0000-000000000002",
+      "sector_id": "cccc0000-0000-0000-0000-000000000003",
+      "nombre": "Revisión ITV",
+      "tipo": "tarea",
+      "configuracion": {
+        "titulo": "Revisión pre-ITV",
+        "descripcion": "Revisión del vehículo antes de la ITV: luces, frenos, neumáticos, emisiones.",
+        "prioridad": "alta",
+        "duracion_minutos": 60,
+        "metadata": { "categoria": "inspeccion", "checklist": ["luces", "frenos", "neumaticos", "emisiones"] }
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 2
+    },
+    {
+      "id": "cc330000-0000-0000-0000-000000000003",
+      "sector_id": "cccc0000-0000-0000-0000-000000000003",
+      "nombre": "Recepción de vehículo",
+      "tipo": "pipeline",
+      "configuracion": {
+        "pasos": [
+          { "orden": 1, "accion": "crear_usuario_externo", "tipo": "cliente" },
+          { "orden": 2, "accion": "crear_tarea", "plantilla": "Revisión ITV" },
+          { "orden": 3, "accion": "registrar_vehiculo" }
+        ]
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 3
+    },
+
+    {
+      "id": "dd440000-0000-0000-0000-000000000001",
+      "sector_id": "dddd0000-0000-0000-0000-000000000004",
+      "nombre": "Detergente industrial (10L)",
+      "tipo": "material",
+      "configuracion": {
+        "nombre": "Detergente industrial 10L",
+        "tipo": "fungible",
+        "sku": "DETERGENTE-IND-10L",
+        "unidad": "ud",
+        "costo_unitario": 18.9,
+        "metadata": { "categoria": "limpieza", "peligroso": true, "caducidad_meses": 24 }
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 1
+    },
+    {
+      "id": "dd440000-0000-0000-0000-000000000002",
+      "sector_id": "dddd0000-0000-0000-0000-000000000004",
+      "nombre": "Limpieza rutina diaria",
+      "tipo": "tarea",
+      "configuracion": {
+        "titulo": "Limpieza rutina diaria",
+        "descripcion": "Rutina de limpieza diaria: barrer, fregar, desinfectar superficies, vaciado de papeleras.",
+        "prioridad": "media",
+        "duracion_minutos": 90,
+        "metadata": { "categoria": "rutina", "frecuencia": "diaria", "checklist": ["barrer", "fregar", "desinfectar", "papeleras"] }
+      },
+      "version": "1.0.0",
+      "activa": true,
+      "sort": 2
+    }
+  ]
+}

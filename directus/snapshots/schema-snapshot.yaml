@@ -1,0 +1,4994 @@
+# ============================================================
+# ENTERAR.ME — Directus 11 schema snapshot
+# ------------------------------------------------------------
+# Aplicar con:
+#   npx directus schema apply ./snapshots/schema-snapshot.yaml
+# o vía API:
+#   POST /schema/snapshot  (con token de admin)
+#
+# Convenciones:
+#   - Todas las PKs operacionales son UUID (gen_random_uuid())
+#   - Multitenant estricto: toda colección operacional lleva tenant_id FK -> tenants
+#   - directus_users tiene tenant_id (FK tenants) para filtrado por rol
+#   - Trazabilidad: cualquier cambio en tareas / movimientos_stock genera
+#     evento en eventos_tarea con ubicacion_id + timestamp
+#   - Roles fijos (UUID estables):
+#       super-admin: 00000000-0000-0000-0000-000000000001  (built-in admin, sin filas de permiso)
+#       tenant_admin: a1111111-1111-1111-1111-111111111111
+#       trabajador:   b2222222-2222-2222-2222-222222222222
+# ============================================================
+
+version: 1
+directus: 11.0.0
+vendor: postgres
+
+schema:
+  collections:
+
+    # =====================================================
+    # PLATAFORMA / MULTITENANT
+    # =====================================================
+
+    - collection: planes
+      schema:
+        name: planes
+        schema: public
+        comment: Planes de suscripción del SaaS
+      meta:
+        accountability: all
+        archive_app_filter: true
+        archive_field: null
+        archive_value: null
+        collapse: open
+        collection: planes
+        color: "#1cddbe"
+        display_template: "{{nombre}}"
+        group: null
+        hidden: false
+        icon: workspace_premium
+        item_duplication_fields: null
+        note: Planes disponibles en la plataforma
+        preview_url: null
+        singleton: false
+        sort: 1
+        sort_field: sort
+        translations: null
+        unarchive_value: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: planes
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            max_length: null
+            numeric_precision: null
+            numeric_scale: null
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+            generation_expression: null
+            foreign_key_table: null
+            foreign_key_column: null
+            comment: null
+          meta:
+            field: id
+            collection: planes
+            interface: input
+            special: null
+            display: null
+            options: null
+            display_options: null
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+            translations: null
+            note: null
+            conditions: null
+            required: false
+            group: null
+        - field: nombre
+          type: string
+          schema:
+            name: nombre
+            table: planes
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 120
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: nombre
+            collection: planes
+            interface: input
+            display: null
+            options: null
+            readonly: false
+            hidden: false
+            sort: 2
+            width: full
+            required: true
+        - field: precio_mensual
+          type: decimal
+          schema:
+            name: precio_mensual
+            table: planes
+            schema: public
+            data_type: numeric
+            default_value: "0"
+            numeric_precision: 10
+            numeric_scale: 2
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: precio_mensual
+            collection: planes
+            interface: input
+            special: null
+            display: null
+            options:
+              icon: euro
+            readonly: false
+            hidden: false
+            sort: 3
+            width: half
+            required: true
+        - field: max_usuarios
+          type: integer
+          schema:
+            name: max_usuarios
+            table: planes
+            schema: public
+            data_type: integer
+            default_value: "-1"
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: max_usuarios
+            collection: planes
+            interface: input
+            options: null
+            readonly: false
+            hidden: false
+            sort: 4
+            width: half
+            note: "-1 = ilimitado"
+        - field: max_ubicaciones
+          type: integer
+          schema:
+            name: max_ubicaciones
+            table: planes
+            schema: public
+            data_type: integer
+            default_value: "-1"
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: max_ubicaciones
+            collection: planes
+            interface: input
+            options: null
+            readonly: false
+            hidden: false
+            sort: 5
+            width: half
+            note: "-1 = ilimitado"
+        - field: max_materiales
+          type: integer
+          schema:
+            name: max_materiales
+            table: planes
+            schema: public
+            data_type: integer
+            default_value: "-1"
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: max_materiales
+            collection: planes
+            interface: input
+            options: null
+            readonly: false
+            hidden: false
+            sort: 6
+            width: half
+            note: "-1 = ilimitado"
+        - field: caracteristicas
+          type: json
+          schema:
+            name: caracteristicas
+            table: planes
+            schema: public
+            data_type: json
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: caracteristicas
+            collection: planes
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            readonly: false
+            hidden: false
+            sort: 7
+            width: full
+        - field: activo
+          type: boolean
+          schema:
+            name: activo
+            table: planes
+            schema: public
+            data_type: boolean
+            default_value: true
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: activo
+            collection: planes
+            interface: boolean
+            special: ['cast-boolean']
+            options: null
+            readonly: false
+            hidden: false
+            sort: 8
+            width: half
+        - field: sort
+          type: integer
+          schema:
+            name: sort
+            table: planes
+            schema: public
+            data_type: integer
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: sort
+            collection: planes
+            interface: input
+            hidden: true
+            sort: 9
+            width: half
+
+    - collection: tenants
+      schema:
+        name: tenants
+        schema: public
+        comment: Inquilinos (organizaciones) del SaaS
+      meta:
+        accountability: all
+        archive_app_filter: true
+        archive_field: estado
+        archive_value: inactivo
+        unarchive_value: activo
+        collapse: open
+        collection: tenants
+        color: "#4c2eec"
+        display_template: "{{nombre}} ({{slug}})"
+        group: null
+        hidden: false
+        icon: corporate_fare
+        item_duplication_fields: null
+        note: Organizaciones inquilinas del SaaS multitenant
+        preview_url: null
+        singleton: false
+        sort: 2
+        sort_field: fecha_alta
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: tenants
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: tenants
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: nombre
+          type: string
+          schema:
+            name: nombre
+            table: tenants
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 200
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: nombre
+            collection: tenants
+            interface: input
+            display: null
+            options: null
+            readonly: false
+            hidden: false
+            sort: 2
+            width: full
+            required: true
+        - field: slug
+          type: string
+          schema:
+            name: slug
+            table: tenants
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 100
+            is_nullable: false
+            is_unique: true
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: slug
+            collection: tenants
+            interface: input
+            special: ['slug']
+            options: null
+            readonly: false
+            hidden: false
+            sort: 3
+            width: half
+            required: true
+        - field: plan_id
+          type: uuid
+          schema:
+            name: plan_id
+            table: tenants
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: planes
+            foreign_key_column: id
+          meta:
+            field: plan_id
+            collection: tenants
+            interface: select-dropdown-m2o
+            special: null
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            readonly: false
+            hidden: false
+            sort: 4
+            width: half
+            required: false
+        - field: estado
+          type: string
+          schema:
+            name: estado
+            table: tenants
+            schema: public
+            data_type: character varying
+            default_value: trial
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: estado
+            collection: tenants
+            interface: select-dropdown
+            special: null
+            display: labels
+            options:
+              choices:
+                - { text: Activo, value: activo }
+                - { text: Trial, value: trial }
+                - { text: Suspendido, value: suspendido }
+                - { text: Inactivo, value: inactivo }
+            readonly: false
+            hidden: false
+            sort: 5
+            width: half
+        - field: dominio
+          type: string
+          schema:
+            name: dominio
+            table: tenants
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 255
+            is_nullable: true
+            is_unique: true
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: dominio
+            collection: tenants
+            interface: input
+            options:
+              icon: link
+            readonly: false
+            hidden: false
+            sort: 6
+            width: half
+        - field: fecha_alta
+          type: timestamp
+          schema:
+            name: fecha_alta
+            table: tenants
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: fecha_alta
+            collection: tenants
+            interface: datetime
+            special: ['date-created']
+            options: null
+            readonly: true
+            hidden: false
+            sort: 7
+            width: half
+        - field: configuracion
+          type: json
+          schema:
+            name: configuracion
+            table: tenants
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: configuracion
+            collection: tenants
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            readonly: false
+            hidden: false
+            sort: 8
+            width: full
+            note: Configuración propia del tenant (preferencias, branding override...)
+
+    - collection: suscripciones
+      schema:
+        name: suscripciones
+        schema: public
+        comment: Suscripciones de los tenants a planes
+      meta:
+        accountability: all
+        archive_app_filter: true
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: suscripciones
+        color: "#fcbf28"
+        display_template: "Suscripción {{tenant_id.nombre}} — {{plan_id.nombre}}"
+        group: null
+        hidden: false
+        icon: payments
+        note: Histórico y estado actual de la suscripción de cada tenant
+        preview_url: null
+        singleton: false
+        sort: 3
+        sort_field: fecha_inicio
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: suscripciones
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: suscripciones
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: suscripciones
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: suscripciones
+            interface: select-dropdown-m2o
+            special: null
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            readonly: false
+            hidden: false
+            sort: 2
+            width: half
+            required: true
+        - field: plan_id
+          type: uuid
+          schema:
+            name: plan_id
+            table: suscripciones
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: planes
+            foreign_key_column: id
+          meta:
+            field: plan_id
+            collection: suscripciones
+            interface: select-dropdown-m2o
+            special: null
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            readonly: false
+            hidden: false
+            sort: 3
+            width: half
+            required: true
+        - field: estado
+          type: string
+          schema:
+            name: estado
+            table: suscripciones
+            schema: public
+            data_type: character varying
+            default_value: pendiente
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: estado
+            collection: suscripciones
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Activa, value: activa }
+                - { text: Pendiente, value: pendiente }
+                - { text: Suspendida, value: suspendida }
+                - { text: Cancelada, value: cancelada }
+            sort: 4
+            width: half
+        - field: fecha_inicio
+          type: date
+          schema:
+            name: fecha_inicio
+            table: suscripciones
+            schema: public
+            data_type: date
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: fecha_inicio
+            collection: suscripciones
+            interface: calendar
+            sort: 5
+            width: half
+        - field: fecha_fin
+          type: date
+          schema:
+            name: fecha_fin
+            table: suscripciones
+            schema: public
+            data_type: date
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: fecha_fin
+            collection: suscripciones
+            interface: calendar
+            sort: 6
+            width: half
+        - field: metodo_pago
+          type: string
+          schema:
+            name: metodo_pago
+            table: suscripciones
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 60
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: metodo_pago
+            collection: suscripciones
+            interface: input
+            sort: 7
+            width: half
+        - field: proxima_factura
+          type: date
+          schema:
+            name: proxima_factura
+            table: suscripciones
+            schema: public
+            data_type: date
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: proxima_factura
+            collection: suscripciones
+            interface: calendar
+            sort: 8
+            width: half
+
+    - collection: sectores_mercado
+      schema:
+        name: sectores_mercado
+        schema: public
+        comment: Sectores disponibles en el marketplace de plantillas
+      meta:
+        accountability: all
+        archive_app_filter: true
+        archive_field: activo
+        archive_value: false
+        unarchive_value: true
+        collapse: open
+        collection: sectores_mercado
+        color: "#f64151"
+        display_template: "{{nombre}}"
+        group: null
+        hidden: false
+        icon: storefront
+        note: Sectores del marketplace de plantillas
+        preview_url: null
+        singleton: false
+        sort: 4
+        sort_field: sort
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: sectores_mercado
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: sectores_mercado
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: nombre
+          type: string
+          schema:
+            name: nombre
+            table: sectores_mercado
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 120
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: nombre
+            collection: sectores_mercado
+            interface: input
+            sort: 2
+            width: half
+            required: true
+        - field: slug
+          type: string
+          schema:
+            name: slug
+            table: sectores_mercado
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 100
+            is_nullable: false
+            is_unique: true
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: slug
+            collection: sectores_mercado
+            interface: input
+            special: ['slug']
+            sort: 3
+            width: half
+            required: true
+        - field: descripcion
+          type: text
+          schema:
+            name: descripcion
+            table: sectores_mercado
+            schema: public
+            data_type: text
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: descripcion
+            collection: sectores_mercado
+            interface: input-multiline
+            sort: 4
+            width: full
+        - field: icono
+          type: string
+          schema:
+            name: icono
+            table: sectores_mercado
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 60
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: icono
+            collection: sectores_mercado
+            interface: input
+            sort: 5
+            width: half
+            note: Nombre de icono Material Symbols
+        - field: activo
+          type: boolean
+          schema:
+            name: activo
+            table: sectores_mercado
+            schema: public
+            data_type: boolean
+            default_value: true
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: activo
+            collection: sectores_mercado
+            interface: boolean
+            special: ['cast-boolean']
+            sort: 6
+            width: half
+        - field: sort
+          type: integer
+          schema:
+            name: sort
+            table: sectores_mercado
+            schema: public
+            data_type: integer
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: sort
+            collection: sectores_mercado
+            interface: input
+            hidden: true
+            sort: 7
+            width: half
+
+    - collection: plantillas_mercado
+      schema:
+        name: plantillas_mercado
+        schema: public
+        comment: Plantillas aplicables a un tenant desde el marketplace
+      meta:
+        accountability: all
+        archive_app_filter: true
+        archive_field: activa
+        archive_value: false
+        unarchive_value: true
+        collapse: open
+        collection: plantillas_mercado
+        color: "#f64151"
+        display_template: "{{nombre}} ({{tipo}})"
+        group: null
+        hidden: false
+        icon: widgets
+        note: Plantillas reutilizables por sector
+        preview_url: null
+        singleton: false
+        sort: 5
+        sort_field: sort
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: plantillas_mercado
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: plantillas_mercado
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: sector_id
+          type: uuid
+          schema:
+            name: sector_id
+            table: plantillas_mercado
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: sectores_mercado
+            foreign_key_column: id
+          meta:
+            field: sector_id
+            collection: plantillas_mercado
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 2
+            width: half
+            required: true
+        - field: nombre
+          type: string
+          schema:
+            name: nombre
+            table: plantillas_mercado
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 160
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: nombre
+            collection: plantillas_mercado
+            interface: input
+            sort: 3
+            width: half
+            required: true
+        - field: tipo
+          type: string
+          schema:
+            name: tipo
+            table: plantillas_mercado
+            schema: public
+            data_type: character varying
+            default_value: material
+            max_length: 30
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: tipo
+            collection: plantillas_mercado
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Add-on, value: addon }
+                - { text: Pipeline, value: pipeline }
+                - { text: Material, value: material }
+                - { text: Tarea, value: tarea }
+                - { text: Usuario, value: usuario }
+            sort: 4
+            width: half
+        - field: configuracion
+          type: json
+          schema:
+            name: configuracion
+            table: plantillas_mercado
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: configuracion
+            collection: plantillas_mercado
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 5
+            width: full
+        - field: version
+          type: string
+          schema:
+            name: version
+            table: plantillas_mercado
+            schema: public
+            data_type: character varying
+            default_value: "1.0.0"
+            max_length: 20
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: version
+            collection: plantillas_mercado
+            interface: input
+            sort: 6
+            width: half
+        - field: activa
+          type: boolean
+          schema:
+            name: activa
+            table: plantillas_mercado
+            schema: public
+            data_type: boolean
+            default_value: true
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: activa
+            collection: plantillas_mercado
+            interface: boolean
+            special: ['cast-boolean']
+            sort: 7
+            width: half
+        - field: sort
+          type: integer
+          schema:
+            name: sort
+            table: plantillas_mercado
+            schema: public
+            data_type: integer
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: sort
+            collection: plantillas_mercado
+            interface: input
+            hidden: true
+            sort: 8
+            width: half
+
+    - collection: instalaciones_mercado
+      schema:
+        name: instalaciones_mercado
+        schema: public
+        comment: Log de plantillas instaladas en cada tenant
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: instalaciones_mercado
+        color: "#f64151"
+        display_template: "{{plantilla_id.nombre}} → {{tenant_id.nombre}}"
+        group: null
+        hidden: false
+        icon: download
+        note: Registro de instalaciones de plantillas en tenants
+        preview_url: null
+        singleton: false
+        sort: 6
+        sort_field: fecha
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: instalaciones_mercado
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: instalaciones_mercado
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: instalaciones_mercado
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: instalaciones_mercado
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 2
+            width: half
+            required: true
+        - field: plantilla_id
+          type: uuid
+          schema:
+            name: plantilla_id
+            table: instalaciones_mercado
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: plantillas_mercado
+            foreign_key_column: id
+          meta:
+            field: plantilla_id
+            collection: instalaciones_mercado
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 3
+            width: half
+            required: true
+        - field: fecha
+          type: timestamp
+          schema:
+            name: fecha
+            table: instalaciones_mercado
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: fecha
+            collection: instalaciones_mercado
+            interface: datetime
+            special: ['date-created']
+            sort: 4
+            width: half
+        - field: estado
+          type: string
+          schema:
+            name: estado
+            table: instalaciones_mercado
+            schema: public
+            data_type: character varying
+            default_value: instalada
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: estado
+            collection: instalaciones_mercado
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Instalada, value: instalada }
+                - { text: Pendiente, value: pendiente }
+                - { text: Fallida, value: fallida }
+            sort: 5
+            width: half
+
+    # =====================================================
+    # OPERACIONAL DEL TENANT (multitenant estricto)
+    # =====================================================
+
+    - collection: ubicaciones
+      schema:
+        name: ubicaciones
+        schema: public
+        comment: Ubicaciones físicas del tenant (sedes, obras, talleres...)
+      meta:
+        accountability: all
+        archive_app_filter: true
+        archive_field: activa
+        archive_value: false
+        unarchive_value: true
+        collapse: open
+        collection: ubicaciones
+        color: "#1cddbe"
+        display_template: "{{nombre}}"
+        group: null
+        hidden: false
+        icon: location_on
+        note: Punto de partida obligatorio del flujo de creación
+        preview_url: null
+        singleton: false
+        sort: 7
+        sort_field: fecha_creacion
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: ubicaciones
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: ubicaciones
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: ubicaciones
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: ubicaciones
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 2
+            width: half
+            required: true
+        - field: nombre
+          type: string
+          schema:
+            name: nombre
+            table: ubicaciones
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 160
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: nombre
+            collection: ubicaciones
+            interface: input
+            sort: 3
+            width: full
+            required: true
+        - field: tipo
+          type: string
+          schema:
+            name: tipo
+            table: ubicaciones
+            schema: public
+            data_type: character varying
+            default_value: sede
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: tipo
+            collection: ubicaciones
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Sede, value: sede }
+                - { text: Obra, value: obra }
+                - { text: Taller, value: taller }
+                - { text: Local, value: local }
+                - { text: Otro, value: otro }
+            sort: 4
+            width: half
+        - field: direccion
+          type: text
+          schema:
+            name: direccion
+            table: ubicaciones
+            schema: public
+            data_type: text
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: direccion
+            collection: ubicaciones
+            interface: input-multiline
+            sort: 5
+            width: full
+        - field: lat
+          type: float
+          schema:
+            name: lat
+            table: ubicaciones
+            schema: public
+            data_type: numeric
+            default_value: null
+            numeric_precision: 9
+            numeric_scale: 6
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: lat
+            collection: ubicaciones
+            interface: input
+            sort: 6
+            width: half
+        - field: lng
+          type: float
+          schema:
+            name: lng
+            table: ubicaciones
+            schema: public
+            data_type: numeric
+            default_value: null
+            numeric_precision: 9
+            numeric_scale: 6
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: lng
+            collection: ubicaciones
+            interface: input
+            sort: 7
+            width: half
+        - field: activa
+          type: boolean
+          schema:
+            name: activa
+            table: ubicaciones
+            schema: public
+            data_type: boolean
+            default_value: true
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: activa
+            collection: ubicaciones
+            interface: boolean
+            special: ['cast-boolean']
+            sort: 8
+            width: half
+        - field: fecha_creacion
+          type: timestamp
+          schema:
+            name: fecha_creacion
+            table: ubicaciones
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: fecha_creacion
+            collection: ubicaciones
+            interface: datetime
+            special: ['date-created']
+            sort: 9
+            width: half
+
+    - collection: usuarios_externos
+      schema:
+        name: usuarios_externos
+        schema: public
+        comment: Clientes, proveedores o la propia empresa del tenant
+      meta:
+        accountability: all
+        archive_app_filter: true
+        archive_field: activo
+        archive_value: false
+        unarchive_value: true
+        collapse: open
+        collection: usuarios_externos
+        color: "#fcbf28"
+        display_template: "{{nombre}} ({{tipo}})"
+        group: null
+        hidden: false
+        icon: groups
+        note: Paso 2 del orden de creación — asignado a una ubicación
+        preview_url: null
+        singleton: false
+        sort: 8
+        sort_field: nombre
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: usuarios_externos
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: usuarios_externos
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: usuarios_externos
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: usuarios_externos
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 2
+            width: half
+            required: true
+        - field: nombre
+          type: string
+          schema:
+            name: nombre
+            table: usuarios_externos
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 200
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: nombre
+            collection: usuarios_externos
+            interface: input
+            sort: 3
+            width: full
+            required: true
+        - field: tipo
+          type: string
+          schema:
+            name: tipo
+            table: usuarios_externos
+            schema: public
+            data_type: character varying
+            default_value: cliente
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: tipo
+            collection: usuarios_externos
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Cliente, value: cliente }
+                - { text: Proveedor, value: proveedor }
+                - { text: Empresa propia, value: empresa_propia }
+            sort: 4
+            width: half
+        - field: email
+          type: string
+          schema:
+            name: email
+            table: usuarios_externos
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 255
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: email
+            collection: usuarios_externos
+            interface: input
+            options:
+              icon: mail
+            sort: 5
+            width: half
+        - field: telefono
+          type: string
+          schema:
+            name: telefono
+            table: usuarios_externos
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 40
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: telefono
+            collection: usuarios_externos
+            interface: input
+            options:
+              icon: phone
+            sort: 6
+            width: half
+        - field: ubicacion_id
+          type: uuid
+          schema:
+            name: ubicacion_id
+            table: usuarios_externos
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: ubicaciones
+            foreign_key_column: id
+          meta:
+            field: ubicacion_id
+            collection: usuarios_externos
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 7
+            width: half
+            note: Debe pertenecer al mismo tenant
+        - field: metadata
+          type: json
+          schema:
+            name: metadata
+            table: usuarios_externos
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: metadata
+            collection: usuarios_externos
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 8
+            width: full
+        - field: activo
+          type: boolean
+          schema:
+            name: activo
+            table: usuarios_externos
+            schema: public
+            data_type: boolean
+            default_value: true
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: activo
+            collection: usuarios_externos
+            interface: boolean
+            special: ['cast-boolean']
+            sort: 9
+            width: half
+
+    - collection: usuarios_internos
+      schema:
+        name: usuarios_internos
+        schema: public
+        comment: Usuarios internos del tenant ligados a directus_users
+      meta:
+        accountability: all
+        archive_app_filter: true
+        archive_field: activo
+        archive_value: false
+        unarchive_value: true
+        collapse: open
+        collection: usuarios_internos
+        color: "#4c2eec"
+        display_template: "{{nombre}} — {{rol}}"
+        group: null
+        hidden: false
+        icon: badge
+        note: Paso 3 del orden de creación — ligado a directus_user + ubicación principal
+        preview_url: null
+        singleton: false
+        sort: 9
+        sort_field: nombre
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: usuarios_internos
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: usuarios_internos
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: usuarios_internos
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: usuarios_internos
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 2
+            width: half
+            required: true
+        - field: directus_user_id
+          type: uuid
+          schema:
+            name: directus_user_id
+            table: usuarios_internos
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: true
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: directus_users
+            foreign_key_column: id
+          meta:
+            field: directus_user_id
+            collection: usuarios_internos
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{email}}"
+            sort: 3
+            width: half
+            required: true
+        - field: nombre
+          type: string
+          schema:
+            name: nombre
+            table: usuarios_internos
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 200
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: nombre
+            collection: usuarios_internos
+            interface: input
+            sort: 4
+            width: full
+            required: true
+        - field: rol
+          type: string
+          schema:
+            name: rol
+            table: usuarios_internos
+            schema: public
+            data_type: character varying
+            default_value: trabajador
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: rol
+            collection: usuarios_internos
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Admin, value: admin }
+                - { text: Gestor, value: gestor }
+                - { text: Trabajador, value: trabajador }
+                - { text: Consultor, value: consultor }
+            sort: 5
+            width: half
+        - field: ubicacion_principal_id
+          type: uuid
+          schema:
+            name: ubicacion_principal_id
+            table: usuarios_internos
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: ubicaciones
+            foreign_key_column: id
+          meta:
+            field: ubicacion_principal_id
+            collection: usuarios_internos
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 6
+            width: half
+            note: Debe pertenecer al mismo tenant
+        - field: activo
+          type: boolean
+          schema:
+            name: activo
+            table: usuarios_internos
+            schema: public
+            data_type: boolean
+            default_value: true
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: activo
+            collection: usuarios_internos
+            interface: boolean
+            special: ['cast-boolean']
+            sort: 7
+            width: half
+
+    - collection: materiales
+      schema:
+        name: materiales
+        schema: public
+        comment: Materiales / recursos del tenant
+      meta:
+        accountability: all
+        archive_app_filter: true
+        archive_field: activo
+        archive_value: false
+        unarchive_value: true
+        collapse: open
+        collection: materiales
+        color: "#f64151"
+        display_template: "{{nombre}} ({{sku}})"
+        group: null
+        hidden: false
+        icon: inventory_2
+        note: Paso 4 del orden de creación — asignado a un usuario externo y al tenant
+        preview_url: null
+        singleton: false
+        sort: 10
+        sort_field: nombre
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: materiales
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: materiales
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: materiales
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: materiales
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 2
+            width: half
+            required: true
+        - field: nombre
+          type: string
+          schema:
+            name: nombre
+            table: materiales
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 200
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: nombre
+            collection: materiales
+            interface: input
+            sort: 3
+            width: full
+            required: true
+        - field: tipo
+          type: string
+          schema:
+            name: tipo
+            table: materiales
+            schema: public
+            data_type: character varying
+            default_value: fungible
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: tipo
+            collection: materiales
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Fungible, value: fungible }
+                - { text: No fungible, value: no_fungible }
+            sort: 4
+            width: half
+        - field: sku
+          type: string
+          schema:
+            name: sku
+            table: materiales
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 60
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: sku
+            collection: materiales
+            interface: input
+            sort: 5
+            width: half
+        - field: unidad
+          type: string
+          schema:
+            name: unidad
+            table: materiales
+            schema: public
+            data_type: character varying
+            default_value: ud
+            max_length: 20
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: unidad
+            collection: materiales
+            interface: input
+            sort: 6
+            width: half
+            note: "ud, kg, m, m², l, h..."
+        - field: costo_unitario
+          type: decimal
+          schema:
+            name: costo_unitario
+            table: materiales
+            schema: public
+            data_type: numeric
+            default_value: "0"
+            numeric_precision: 12
+            numeric_scale: 2
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: costo_unitario
+            collection: materiales
+            interface: input
+            sort: 7
+            width: half
+        - field: usuario_externo_id
+          type: uuid
+          schema:
+            name: usuario_externo_id
+            table: materiales
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: usuarios_externos
+            foreign_key_column: id
+          meta:
+            field: usuario_externo_id
+            collection: materiales
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 8
+            width: half
+            note: Debe existir en el mismo tenant
+        - field: organization_id
+          type: uuid
+          schema:
+            name: organization_id
+            table: materiales
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: organization_id
+            collection: materiales
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 9
+            width: half
+            note: Self-FK al tenant (la "organización" propietaria)
+        - field: metadata
+          type: json
+          schema:
+            name: metadata
+            table: materiales
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: metadata
+            collection: materiales
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 10
+            width: full
+        - field: activo
+          type: boolean
+          schema:
+            name: activo
+            table: materiales
+            schema: public
+            data_type: boolean
+            default_value: true
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: activo
+            collection: materiales
+            interface: boolean
+            special: ['cast-boolean']
+            sort: 11
+            width: half
+
+    - collection: stocks
+      schema:
+        name: stocks
+        schema: public
+        comment: Stock de un material en una ubicación
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: stocks
+        color: "#1cddbe"
+        display_template: "{{material_id.nombre}} @ {{ubicacion_id.nombre}}"
+        group: null
+        hidden: false
+        icon: warehouse
+        note: Stock por ubicación (material × ubicación dentro del tenant)
+        preview_url: null
+        singleton: false
+        sort: 11
+        sort_field: fecha_actualizacion
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: stocks
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: stocks
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: stocks
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: stocks
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 2
+            width: half
+            required: true
+        - field: ubicacion_id
+          type: uuid
+          schema:
+            name: ubicacion_id
+            table: stocks
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: ubicaciones
+            foreign_key_column: id
+          meta:
+            field: ubicacion_id
+            collection: stocks
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 3
+            width: half
+            required: true
+        - field: material_id
+          type: uuid
+          schema:
+            name: material_id
+            table: stocks
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: materiales
+            foreign_key_column: id
+          meta:
+            field: material_id
+            collection: stocks
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 4
+            width: half
+            required: true
+        - field: cantidad
+          type: decimal
+          schema:
+            name: cantidad
+            table: stocks
+            schema: public
+            data_type: numeric
+            default_value: "0"
+            numeric_precision: 14
+            numeric_scale: 2
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: cantidad
+            collection: stocks
+            interface: input
+            sort: 5
+            width: half
+        - field: fecha_actualizacion
+          type: timestamp
+          schema:
+            name: fecha_actualizacion
+            table: stocks
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: fecha_actualizacion
+            collection: stocks
+            interface: datetime
+            special: ['date-updated']
+            sort: 6
+            width: half
+        - field: umbral_alerta
+          type: decimal
+          schema:
+            name: umbral_alerta
+            table: stocks
+            schema: public
+            data_type: numeric
+            default_value: "0"
+            numeric_precision: 14
+            numeric_scale: 2
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: umbral_alerta
+            collection: stocks
+            interface: input
+            sort: 7
+            width: half
+            note: Por debajo de este valor se dispara alerta
+
+    - collection: movimientos_stock
+      schema:
+        name: movimientos_stock
+        schema: public
+        comment: Movimientos de stock (entradas, salidas, ajustes) — trazabilidad
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: movimientos_stock
+        color: "#1cddbe"
+        display_template: "{{tipo}} {{cantidad}} — {{material_id.nombre}}"
+        group: null
+        hidden: false
+        icon: swap_vert
+        note: Trazabilidad de movimientos de stock por ubicación y momento
+        preview_url: null
+        singleton: false
+        sort: 12
+        sort_field: timestamp
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: movimientos_stock
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: movimientos_stock
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: movimientos_stock
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: movimientos_stock
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 2
+            width: half
+            required: true
+        - field: stock_id
+          type: uuid
+          schema:
+            name: stock_id
+            table: movimientos_stock
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: stocks
+            foreign_key_column: id
+          meta:
+            field: stock_id
+            collection: movimientos_stock
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 3
+            width: half
+        - field: tipo
+          type: string
+          schema:
+            name: tipo
+            table: movimientos_stock
+            schema: public
+            data_type: character varying
+            default_value: entrada
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: tipo
+            collection: movimientos_stock
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Entrada, value: entrada }
+                - { text: Salida, value: salida }
+                - { text: Ajuste, value: ajuste }
+            sort: 4
+            width: half
+        - field: cantidad
+          type: decimal
+          schema:
+            name: cantidad
+            table: movimientos_stock
+            schema: public
+            data_type: numeric
+            default_value: "0"
+            numeric_precision: 14
+            numeric_scale: 2
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: cantidad
+            collection: movimientos_stock
+            interface: input
+            sort: 5
+            width: half
+        - field: motivo
+          type: string
+          schema:
+            name: motivo
+            table: movimientos_stock
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 255
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: motivo
+            collection: movimientos_stock
+            interface: input
+            sort: 6
+            width: full
+        - field: tarea_id
+          type: uuid
+          schema:
+            name: tarea_id
+            table: movimientos_stock
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tareas
+            foreign_key_column: id
+          meta:
+            field: tarea_id
+            collection: movimientos_stock
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 7
+            width: half
+            note: Si el movimiento viene de una tarea
+        - field: ubicacion_id
+          type: uuid
+          schema:
+            name: ubicacion_id
+            table: movimientos_stock
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: ubicaciones
+            foreign_key_column: id
+          meta:
+            field: ubicacion_id
+            collection: movimientos_stock
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 8
+            width: half
+            required: true
+        - field: material_id
+          type: uuid
+          schema:
+            name: material_id
+            table: movimientos_stock
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: materiales
+            foreign_key_column: id
+          meta:
+            field: material_id
+            collection: movimientos_stock
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 9
+            width: half
+            required: true
+        - field: usuario_interno_id
+          type: uuid
+          schema:
+            name: usuario_interno_id
+            table: movimientos_stock
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: usuarios_internos
+            foreign_key_column: id
+          meta:
+            field: usuario_interno_id
+            collection: movimientos_stock
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 10
+            width: half
+        - field: timestamp
+          type: timestamp
+          schema:
+            name: timestamp
+            table: movimientos_stock
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: timestamp
+            collection: movimientos_stock
+            interface: datetime
+            special: ['date-created']
+            sort: 11
+            width: half
+
+    - collection: tareas
+      schema:
+        name: tareas
+        schema: public
+        comment: Tareas operativas del tenant
+      meta:
+        accountability: all
+        archive_app_filter: true
+        archive_field: estado
+        archive_value: cancelada
+        unarchive_value: pendiente
+        collapse: open
+        collection: tareas
+        color: "#fcbf28"
+        display_template: "{{titulo}}"
+        group: null
+        hidden: false
+        icon: task_alt
+        note: Paso 5 del orden de creación — ubicación + usuario externo
+        preview_url: null
+        singleton: false
+        sort: 13
+        sort_field: fecha_asignacion
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: tareas
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: tareas
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: tareas
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: tareas
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 2
+            width: half
+            required: true
+        - field: ubicacion_id
+          type: uuid
+          schema:
+            name: ubicacion_id
+            table: tareas
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: ubicaciones
+            foreign_key_column: id
+          meta:
+            field: ubicacion_id
+            collection: tareas
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 3
+            width: half
+            required: true
+        - field: usuario_externo_id
+          type: uuid
+          schema:
+            name: usuario_externo_id
+            table: tareas
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: usuarios_externos
+            foreign_key_column: id
+          meta:
+            field: usuario_externo_id
+            collection: tareas
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 4
+            width: half
+            required: true
+        - field: usuario_interno_id
+          type: uuid
+          schema:
+            name: usuario_interno_id
+            table: tareas
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: usuarios_internos
+            foreign_key_column: id
+          meta:
+            field: usuario_interno_id
+            collection: tareas
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 5
+            width: half
+            note: Trabajador asignado a la tarea
+        - field: material_ids
+          type: alias
+          schema: null
+          meta:
+            field: material_ids
+            collection: tareas
+            interface: tags-m2m
+            special: ['m2m']
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 6
+            width: full
+            note: M2M a materiales vía tareas_materiales
+        - field: titulo
+          type: string
+          schema:
+            name: titulo
+            table: tareas
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 255
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: titulo
+            collection: tareas
+            interface: input
+            sort: 7
+            width: full
+            required: true
+        - field: descripcion
+          type: text
+          schema:
+            name: descripcion
+            table: tareas
+            schema: public
+            data_type: text
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: descripcion
+            collection: tareas
+            interface: input-multiline
+            sort: 8
+            width: full
+        - field: estado
+          type: string
+          schema:
+            name: estado
+            table: tareas
+            schema: public
+            data_type: character varying
+            default_value: pendiente
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: estado
+            collection: tareas
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Pendiente, value: pendiente }
+                - { text: En progreso, value: en_progreso }
+                - { text: Completada, value: completada }
+                - { text: Cancelada, value: cancelada }
+            sort: 9
+            width: half
+        - field: prioridad
+          type: string
+          schema:
+            name: prioridad
+            table: tareas
+            schema: public
+            data_type: character varying
+            default_value: media
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: prioridad
+            collection: tareas
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Baja, value: baja }
+                - { text: Media, value: media }
+                - { text: Alta, value: alta }
+                - { text: Urgente, value: urgente }
+            sort: 10
+            width: half
+        - field: fecha_asignacion
+          type: timestamp
+          schema:
+            name: fecha_asignacion
+            table: tareas
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: fecha_asignacion
+            collection: tareas
+            interface: datetime
+            special: ['date-created']
+            sort: 11
+            width: half
+        - field: fecha_inicio
+          type: timestamp
+          schema:
+            name: fecha_inicio
+            table: tareas
+            schema: public
+            data_type: timestamp with time zone
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: fecha_inicio
+            collection: tareas
+            interface: datetime
+            sort: 12
+            width: half
+        - field: fecha_fin
+          type: timestamp
+          schema:
+            name: fecha_fin
+            table: tareas
+            schema: public
+            data_type: timestamp with time zone
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: fecha_fin
+            collection: tareas
+            interface: datetime
+            sort: 13
+            width: half
+        - field: duracion_minutos
+          type: integer
+          schema:
+            name: duracion_minutos
+            table: tareas
+            schema: public
+            data_type: integer
+            default_value: "0"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: duracion_minutos
+            collection: tareas
+            interface: input
+            sort: 14
+            width: half
+        - field: costo_total
+          type: decimal
+          schema:
+            name: costo_total
+            table: tareas
+            schema: public
+            data_type: numeric
+            default_value: "0"
+            numeric_precision: 14
+            numeric_scale: 2
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: costo_total
+            collection: tareas
+            interface: input
+            sort: 15
+            width: half
+        - field: metadata
+          type: json
+          schema:
+            name: metadata
+            table: tareas
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: metadata
+            collection: tareas
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 16
+            width: full
+
+    - collection: tareas_materiales
+      schema:
+        name: tareas_materiales
+        schema: public
+        comment: Tabla junction M2M entre tareas y materiales
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: tareas_materiales
+        color: "#fcbf28"
+        display_template: null
+        group: null
+        hidden: true
+        icon: link
+        note: Junction M2M tareas ↔ materiales
+        preview_url: null
+        singleton: false
+        sort: 14
+        sort_field: null
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: tareas_materiales
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: tareas_materiales
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tarea_id
+          type: uuid
+          schema:
+            name: tarea_id
+            table: tareas_materiales
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tareas
+            foreign_key_column: id
+          meta:
+            field: tarea_id
+            collection: tareas_materiales
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 2
+            width: half
+            required: true
+        - field: material_id
+          type: uuid
+          schema:
+            name: material_id
+            table: tareas_materiales
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: materiales
+            foreign_key_column: id
+          meta:
+            field: material_id
+            collection: tareas_materiales
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 3
+            width: half
+            required: true
+        - field: cantidad
+          type: decimal
+          schema:
+            name: cantidad
+            table: tareas_materiales
+            schema: public
+            data_type: numeric
+            default_value: "1"
+            numeric_precision: 14
+            numeric_scale: 2
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: cantidad
+            collection: tareas_materiales
+            interface: input
+            sort: 4
+            width: half
+
+    - collection: eventos_tarea
+      schema:
+        name: eventos_tarea
+        schema: public
+        comment: Trazabilidad total — cualquier cambio relevante deja evento
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: eventos_tarea
+        color: "#333333"
+        display_template: "{{tipo}} @ {{timestamp}}"
+        group: null
+        hidden: false
+        icon: history
+        note: Tabla de trazabilidad total (ubicación + momento)
+        preview_url: null
+        singleton: false
+        sort: 15
+        sort_field: timestamp
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: eventos_tarea
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: eventos_tarea
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tarea_id
+          type: uuid
+          schema:
+            name: tarea_id
+            table: eventos_tarea
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tareas
+            foreign_key_column: id
+          meta:
+            field: tarea_id
+            collection: eventos_tarea
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 2
+            width: half
+            required: true
+        - field: tipo
+          type: string
+          schema:
+            name: tipo
+            table: eventos_tarea
+            schema: public
+            data_type: character varying
+            default_value: nota
+            max_length: 30
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: tipo
+            collection: eventos_tarea
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Inicio, value: inicio }
+                - { text: Pausa, value: pausa }
+                - { text: Reanudación, value: reanudacion }
+                - { text: Fin, value: fin }
+                - { text: Material usado, value: material_usado }
+                - { text: Nota, value: nota }
+                - { text: Cambio ubicación, value: cambio_ubicacion }
+            sort: 3
+            width: half
+        - field: payload
+          type: json
+          schema:
+            name: payload
+            table: eventos_tarea
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: payload
+            collection: eventos_tarea
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 4
+            width: full
+            note: Diff / contexto del evento
+        - field: timestamp
+          type: timestamp
+          schema:
+            name: timestamp
+            table: eventos_tarea
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: timestamp
+            collection: eventos_tarea
+            interface: datetime
+            special: ['date-created']
+            sort: 5
+            width: half
+        - field: usuario_interno_id
+          type: uuid
+          schema:
+            name: usuario_interno_id
+            table: eventos_tarea
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: usuarios_internos
+            foreign_key_column: id
+          meta:
+            field: usuario_interno_id
+            collection: eventos_tarea
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 6
+            width: half
+        - field: ubicacion_id
+          type: uuid
+          schema:
+            name: ubicacion_id
+            table: eventos_tarea
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: ubicaciones
+            foreign_key_column: id
+          meta:
+            field: ubicacion_id
+            collection: eventos_tarea
+            interface: select-dropdown-m2o
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            sort: 7
+            width: half
+            note: Donde ocurrió el evento (trazabilidad ubicación+momento)
+
+    - collection: informes
+      schema:
+        name: informes
+        schema: public
+        comment: Informes generados por usuarios o por el agente IA
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: informes
+        color: "#1cddbe"
+        display_template: "{{tipo}} — {{fecha_generacion}}"
+        group: null
+        hidden: false
+        icon: insights
+        note: Informes del tenant (stock, gastos, productividad, etc.)
+        preview_url: null
+        singleton: false
+        sort: 16
+        sort_field: fecha_generacion
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: informes
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: informes
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: informes
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: informes
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 2
+            width: half
+            required: true
+        - field: tipo
+          type: string
+          schema:
+            name: tipo
+            table: informes
+            schema: public
+            data_type: character varying
+            default_value: otro
+            max_length: 30
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: tipo
+            collection: informes
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Stock, value: stock }
+                - { text: Gastos, value: gastos }
+                - { text: Productividad, value: productividad }
+                - { text: Eficiencia, value: eficiencia }
+                - { text: Ganancias, value: ganancias }
+                - { text: Otro, value: otro }
+            sort: 3
+            width: half
+        - field: parametros
+          type: json
+          schema:
+            name: parametros
+            table: informes
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: parametros
+            collection: informes
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 4
+            width: full
+        - field: resultado
+          type: json
+          schema:
+            name: resultado
+            table: informes
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: resultado
+            collection: informes
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 5
+            width: full
+        - field: fecha_generacion
+          type: timestamp
+          schema:
+            name: fecha_generacion
+            table: informes
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: fecha_generacion
+            collection: informes
+            interface: datetime
+            special: ['date-created']
+            sort: 6
+            width: half
+        - field: generado_por_usuario_id
+          type: uuid
+          schema:
+            name: generado_por_usuario_id
+            table: informes
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: usuarios_internos
+            foreign_key_column: id
+          meta:
+            field: generado_por_usuario_id
+            collection: informes
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 7
+            width: half
+        - field: generado_por_agente
+          type: boolean
+          schema:
+            name: generado_por_agente
+            table: informes
+            schema: public
+            data_type: boolean
+            default_value: false
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: generado_por_agente
+            collection: informes
+            interface: boolean
+            special: ['cast-boolean']
+            sort: 8
+            width: half
+
+    # =====================================================
+    # AGENTE IA
+    # =====================================================
+
+    - collection: agente_conversaciones
+      schema:
+        name: agente_conversaciones
+        schema: public
+        comment: Conversaciones del agente IA con usuarios del tenant
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: agente_conversaciones
+        color: "#4c2eec"
+        display_template: "{{titulo}}"
+        group: null
+        hidden: false
+        icon: forum
+        note: Sesiones de chat del agente IA
+        preview_url: null
+        singleton: false
+        sort: 17
+        sort_field: updated_at
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: agente_conversaciones
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: agente_conversaciones
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: agente_conversaciones
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: agente_conversaciones
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 2
+            width: half
+            required: true
+        - field: usuario_interno_id
+          type: uuid
+          schema:
+            name: usuario_interno_id
+            table: agente_conversaciones
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: usuarios_internos
+            foreign_key_column: id
+          meta:
+            field: usuario_interno_id
+            collection: agente_conversaciones
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 3
+            width: half
+        - field: titulo
+          type: string
+          schema:
+            name: titulo
+            table: agente_conversaciones
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 200
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: titulo
+            collection: agente_conversaciones
+            interface: input
+            sort: 4
+            width: full
+        - field: created_at
+          type: timestamp
+          schema:
+            name: created_at
+            table: agente_conversaciones
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: created_at
+            collection: agente_conversaciones
+            interface: datetime
+            special: ['date-created']
+            sort: 5
+            width: half
+        - field: updated_at
+          type: timestamp
+          schema:
+            name: updated_at
+            table: agente_conversaciones
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: updated_at
+            collection: agente_conversaciones
+            interface: datetime
+            special: ['date-updated']
+            sort: 6
+            width: half
+
+    - collection: agente_mensajes
+      schema:
+        name: agente_mensajes
+        schema: public
+        comment: Mensajes de las conversaciones del agente IA
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: agente_mensajes
+        color: "#4c2eec"
+        display_template: "{{rol}} @ {{timestamp}}"
+        group: null
+        hidden: false
+        icon: chat_bubble
+        note: Mensajes individuales del agente
+        preview_url: null
+        singleton: false
+        sort: 18
+        sort_field: timestamp
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: agente_mensajes
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: agente_mensajes
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: conversacion_id
+          type: uuid
+          schema:
+            name: conversacion_id
+            table: agente_mensajes
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: agente_conversaciones
+            foreign_key_column: id
+          meta:
+            field: conversacion_id
+            collection: agente_mensajes
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 2
+            width: half
+            required: true
+        - field: rol
+          type: string
+          schema:
+            name: rol
+            table: agente_mensajes
+            schema: public
+            data_type: character varying
+            default_value: user
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: rol
+            collection: agente_mensajes
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: User, value: user }
+                - { text: Assistant, value: assistant }
+                - { text: Tool, value: tool }
+            sort: 3
+            width: half
+        - field: contenido
+          type: text
+          schema:
+            name: contenido
+            table: agente_mensajes
+            schema: public
+            data_type: text
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: contenido
+            collection: agente_mensajes
+            interface: input-multiline
+            sort: 4
+            width: full
+        - field: tool_calls
+          type: json
+          schema:
+            name: tool_calls
+            table: agente_mensajes
+            schema: public
+            data_type: json
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: tool_calls
+            collection: agente_mensajes
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 5
+            width: full
+        - field: skill_invocada
+          type: string
+          schema:
+            name: skill_invocada
+            table: agente_mensajes
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 120
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: skill_invocada
+            collection: agente_mensajes
+            interface: input
+            sort: 6
+            width: half
+        - field: timestamp
+          type: timestamp
+          schema:
+            name: timestamp
+            table: agente_mensajes
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: timestamp
+            collection: agente_mensajes
+            interface: datetime
+            special: ['date-created']
+            sort: 7
+            width: half
+
+    - collection: agente_skills_log
+      schema:
+        name: agente_skills_log
+        schema: public
+        comment: Log de ejecuciones de skills del agente IA
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: agente_skills_log
+        color: "#4c2eec"
+        display_template: "{{skill_nombre}} ({{timestamp}})"
+        group: null
+        hidden: false
+        icon: bolt
+        note: Auditoría de cada skill ejecutada por el agente
+        preview_url: null
+        singleton: false
+        sort: 19
+        sort_field: timestamp
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: agente_skills_log
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: agente_skills_log
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: conversacion_id
+          type: uuid
+          schema:
+            name: conversacion_id
+            table: agente_skills_log
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: agente_conversaciones
+            foreign_key_column: id
+          meta:
+            field: conversacion_id
+            collection: agente_skills_log
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 2
+            width: half
+        - field: skill_nombre
+          type: string
+          schema:
+            name: skill_nombre
+            table: agente_skills_log
+            schema: public
+            data_type: character varying
+            default_value: null
+            max_length: 120
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: skill_nombre
+            collection: agente_skills_log
+            interface: input
+            sort: 3
+            width: half
+            required: true
+        - field: input
+          type: json
+          schema:
+            name: input
+            table: agente_skills_log
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: input
+            collection: agente_skills_log
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 4
+            width: full
+        - field: output
+          type: json
+          schema:
+            name: output
+            table: agente_skills_log
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: output
+            collection: agente_skills_log
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 5
+            width: full
+        - field: duracion_ms
+          type: integer
+          schema:
+            name: duracion_ms
+            table: agente_skills_log
+            schema: public
+            data_type: integer
+            default_value: "0"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: duracion_ms
+            collection: agente_skills_log
+            interface: input
+            sort: 6
+            width: half
+        - field: exito
+          type: boolean
+          schema:
+            name: exito
+            table: agente_skills_log
+            schema: public
+            data_type: boolean
+            default_value: true
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: exito
+            collection: agente_skills_log
+            interface: boolean
+            special: ['cast-boolean']
+            sort: 7
+            width: half
+        - field: error
+          type: text
+          schema:
+            name: error
+            table: agente_skills_log
+            schema: public
+            data_type: text
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: error
+            collection: agente_skills_log
+            interface: input-multiline
+            sort: 8
+            width: full
+        - field: timestamp
+          type: timestamp
+          schema:
+            name: timestamp
+            table: agente_skills_log
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: timestamp
+            collection: agente_skills_log
+            interface: datetime
+            special: ['date-created']
+            sort: 9
+            width: half
+
+    - collection: agente_rag_documentos
+      schema:
+        name: agente_rag_documentos
+        schema: public
+        comment: Documentos indexados para RAG (con embedding vector(768))
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: agente_rag_documentos
+        color: "#4c2eec"
+        display_template: "{{origen}}:{{origen_id}}"
+        group: null
+        hidden: false
+        icon: auto_stories
+        note: Base de conocimiento RAG por tenant. La columna embedding (vector(768)) se crea vía migrations/001_initial_schema.sql
+        preview_url: null
+        singleton: false
+        sort: 20
+        sort_field: created_at
+        translations: null
+      fields:
+        - field: id
+          type: uuid
+          schema:
+            name: id
+            table: agente_rag_documentos
+            schema: public
+            data_type: uuid
+            default_value: gen_random_uuid()
+            is_nullable: false
+            is_unique: true
+            is_primary_key: true
+            is_generated: false
+          meta:
+            field: id
+            collection: agente_rag_documentos
+            interface: input
+            readonly: true
+            hidden: true
+            sort: 1
+            width: full
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: agente_rag_documentos
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: agente_rag_documentos
+            interface: select-dropdown-m2o
+            display: related-values
+            sort: 2
+            width: half
+            required: true
+        - field: origen
+          type: string
+          schema:
+            name: origen
+            table: agente_rag_documentos
+            schema: public
+            data_type: character varying
+            default_value: manual
+            max_length: 20
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: origen
+            collection: agente_rag_documentos
+            interface: select-dropdown
+            display: labels
+            options:
+              choices:
+                - { text: Tarea, value: tarea }
+                - { text: Material, value: material }
+                - { text: Ubicación, value: ubicacion }
+                - { text: Usuario, value: usuario }
+                - { text: Informe, value: informe }
+                - { text: Manual, value: manual }
+            sort: 3
+            width: half
+        - field: origen_id
+          type: uuid
+          schema:
+            name: origen_id
+            table: agente_rag_documentos
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: origen_id
+            collection: agente_rag_documentos
+            interface: input
+            sort: 4
+            width: half
+            note: ID del registro de origen (M2A lógico)
+        - field: contenido_texto
+          type: text
+          schema:
+            name: contenido_texto
+            table: agente_rag_documentos
+            schema: public
+            data_type: text
+            default_value: null
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: contenido_texto
+            collection: agente_rag_documentos
+            interface: input-multiline
+            sort: 5
+            width: full
+            required: true
+        - field: metadata
+          type: json
+          schema:
+            name: metadata
+            table: agente_rag_documentos
+            schema: public
+            data_type: json
+            default_value: "{}"
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: metadata
+            collection: agente_rag_documentos
+            interface: input-code
+            special: ['cast-json']
+            options:
+              language: json
+            sort: 6
+            width: full
+        - field: created_at
+          type: timestamp
+          schema:
+            name: created_at
+            table: agente_rag_documentos
+            schema: public
+            data_type: timestamp with time zone
+            default_value: now()
+            is_nullable: false
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+          meta:
+            field: created_at
+            collection: agente_rag_documentos
+            interface: datetime
+            special: ['date-created']
+            sort: 7
+            width: half
+        # NOTA: La columna `embedding` (vector(768)) no se declara aquí porque
+        # Directus no gestiona el tipo pgvector. Se crea en
+        # migrations/001_initial_schema.sql y Directus la deja en paz
+        # (es un campo "externo"). El servicio IA la usa vía SQL nativo.
+
+    # =====================================================
+    # EXTENSIÓN DE directus_users (colección del sistema)
+    # =====================================================
+    # Añadimos tenant_id a directus_users para permitir el filtro
+    # multitenant por rol (validation: tenant_id == $CURRENT_USER.tenant_id).
+    # Directus fusiona este campo con los del sistema; no toca los demás.
+    - collection: directus_users
+      schema:
+        name: directus_users
+        schema: public
+        comment: Sistema — usuarios de Directus (extendido con tenant_id)
+      meta:
+        accountability: all
+        archive_app_filter: false
+        archive_field: null
+        archive_value: null
+        unarchive_value: null
+        collapse: open
+        collection: directus_users
+        color: null
+        display_template: "{{email}}"
+        group: null
+        hidden: false
+        icon: supervised_user_circle
+        item_duplication_fields: null
+        note: null
+        preview_url: null
+        singleton: false
+        sort: 99
+        sort_field: null
+        translations: null
+      fields:
+        - field: tenant_id
+          type: uuid
+          schema:
+            name: tenant_id
+            table: directus_users
+            schema: public
+            data_type: uuid
+            default_value: null
+            is_nullable: true
+            is_unique: false
+            is_primary_key: false
+            is_generated: false
+            foreign_key_table: tenants
+            foreign_key_column: id
+          meta:
+            field: tenant_id
+            collection: directus_users
+            interface: select-dropdown-m2o
+            special: null
+            display: related-values
+            options:
+              template: "{{nombre}}"
+            readonly: false
+            hidden: false
+            sort: 100
+            width: half
+            note: Tenant al que pertenece este usuario (multitenant)
+
+# ============================================================
+# RELACIONES
+# ============================================================
+relations:
+
+  # --- tenants → planes ---
+  - collection: tenants
+    field: plan_id
+    related_collection: planes
+    meta:
+      junction_field: null
+      many_collection: tenants
+      many_field: plan_id
+      one_collection: planes
+      one_field: null
+      sort_field: null
+      system: false
+    schema:
+      table: tenants
+      column: plan_id
+      foreign_key_table: planes
+      foreign_key_column: id
+      constraint_name: tenants_plan_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- suscripciones ---
+  - collection: suscripciones
+    field: tenant_id
+    related_collection: tenants
+    meta:
+      many_collection: suscripciones
+      many_field: tenant_id
+      one_collection: tenants
+      one_field: null
+      system: false
+    schema:
+      table: suscripciones
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: suscripciones_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: suscripciones
+    field: plan_id
+    related_collection: planes
+    meta:
+      many_collection: suscripciones
+      many_field: plan_id
+      one_collection: planes
+      one_field: null
+      system: false
+    schema:
+      table: suscripciones
+      column: plan_id
+      foreign_key_table: planes
+      foreign_key_column: id
+      constraint_name: suscripciones_plan_id_foreign
+      on_update: CASCADE
+      on_delete: RESTRICT
+
+  # --- plantillas_mercado → sectores_mercado ---
+  - collection: plantillas_mercado
+    field: sector_id
+    related_collection: sectores_mercado
+    meta:
+      many_collection: plantillas_mercado
+      many_field: sector_id
+      one_collection: sectores_mercado
+      one_field: null
+      system: false
+    schema:
+      table: plantillas_mercado
+      column: sector_id
+      foreign_key_table: sectores_mercado
+      foreign_key_column: id
+      constraint_name: plantillas_mercado_sector_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+
+  # --- instalaciones_mercado ---
+  - collection: instalaciones_mercado
+    field: tenant_id
+    related_collection: tenants
+    meta:
+      many_collection: instalaciones_mercado
+      many_field: tenant_id
+      one_collection: tenants
+      one_field: null
+      system: false
+    schema:
+      table: instalaciones_mercado
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: instalaciones_mercado_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: instalaciones_mercado
+    field: plantilla_id
+    related_collection: plantillas_mercado
+    meta:
+      many_collection: instalaciones_mercado
+      many_field: plantilla_id
+      one_collection: plantillas_mercado
+      one_field: null
+      system: false
+    schema:
+      table: instalaciones_mercado
+      column: plantilla_id
+      foreign_key_table: plantillas_mercado
+      foreign_key_column: id
+      constraint_name: instalaciones_mercado_plantilla_id_foreign
+      on_update: CASCADE
+      on_delete: RESTRICT
+
+  # --- ubicaciones ---
+  - collection: ubicaciones
+    field: tenant_id
+    related_collection: tenants
+    meta:
+      many_collection: ubicaciones
+      many_field: tenant_id
+      one_collection: tenants
+      one_field: ubicaciones
+      system: false
+    schema:
+      table: ubicaciones
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: ubicaciones_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+
+  # --- usuarios_externos ---
+  - collection: usuarios_externos
+    field: tenant_id
+    related_collection: tenants
+    meta:
+      many_collection: usuarios_externos
+      many_field: tenant_id
+      one_collection: tenants
+      one_field: usuarios_externos
+      system: false
+    schema:
+      table: usuarios_externos
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: usuarios_externos_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: usuarios_externos
+    field: ubicacion_id
+    related_collection: ubicaciones
+    meta:
+      many_collection: usuarios_externos
+      many_field: ubicacion_id
+      one_collection: ubicaciones
+      one_field: usuarios_externos
+      system: false
+    schema:
+      table: usuarios_externos
+      column: ubicacion_id
+      foreign_key_table: ubicaciones
+      foreign_key_column: id
+      constraint_name: usuarios_externos_ubicacion_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- usuarios_internos ---
+  - collection: usuarios_internos
+    field: tenant_id
+    related_collection: tenants
+    meta:
+      many_collection: usuarios_internos
+      many_field: tenant_id
+      one_collection: tenants
+      one_field: usuarios_internos
+      system: false
+    schema:
+      table: usuarios_internos
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: usuarios_internos_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: usuarios_internos
+    field: directus_user_id
+    related_collection: directus_users
+    meta:
+      many_collection: usuarios_internos
+      many_field: directus_user_id
+      one_collection: directus_users
+      one_field: null
+      system: false
+    schema:
+      table: usuarios_internos
+      column: directus_user_id
+      foreign_key_table: directus_users
+      foreign_key_column: id
+      constraint_name: usuarios_internos_directus_user_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: usuarios_internos
+    field: ubicacion_principal_id
+    related_collection: ubicaciones
+    meta:
+      many_collection: usuarios_internos
+      many_field: ubicacion_principal_id
+      one_collection: ubicaciones
+      one_field: usuarios_internos
+      system: false
+    schema:
+      table: usuarios_internos
+      column: ubicacion_principal_id
+      foreign_key_table: ubicaciones
+      foreign_key_column: id
+      constraint_name: usuarios_internos_ubicacion_principal_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- directus_users.tenant_id ---
+  - collection: directus_users
+    field: tenant_id
+    related_collection: tenants
+    meta:
+      many_collection: directus_users
+      many_field: tenant_id
+      one_collection: tenants
+      one_field: directus_users
+      system: true
+    schema:
+      table: directus_users
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: directus_users_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- materiales ---
+  - collection: materiales
+    field: tenant_id
+    related_collection: tenants
+    meta:
+      many_collection: materiales
+      many_field: tenant_id
+      one_collection: tenants
+      one_field: materiales
+      system: false
+    schema:
+      table: materiales
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: materiales_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: materiales
+    field: usuario_externo_id
+    related_collection: usuarios_externos
+    meta:
+      many_collection: materiales
+      many_field: usuario_externo_id
+      one_collection: usuarios_externos
+      one_field: materiales
+      system: false
+    schema:
+      table: materiales
+      column: usuario_externo_id
+      foreign_key_table: usuarios_externos
+      foreign_key_column: id
+      constraint_name: materiales_usuario_externo_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+  - collection: materiales
+    field: organization_id
+    related_collection: tenants
+    meta:
+      many_collection: materiales
+      many_field: organization_id
+      one_collection: tenants
+      one_field: null
+      system: false
+    schema:
+      table: materiales
+      column: organization_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: materiales_organization_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- stocks ---
+  - collection: stocks
+    field: tenant_id
+    related_collection: tenants
+    meta: { many_collection: stocks, many_field: tenant_id, one_collection: tenants, one_field: stocks, system: false }
+    schema:
+      table: stocks
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: stocks_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: stocks
+    field: ubicacion_id
+    related_collection: ubicaciones
+    meta: { many_collection: stocks, many_field: ubicacion_id, one_collection: ubicaciones, one_field: stocks, system: false }
+    schema:
+      table: stocks
+      column: ubicacion_id
+      foreign_key_table: ubicaciones
+      foreign_key_column: id
+      constraint_name: stocks_ubicacion_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: stocks
+    field: material_id
+    related_collection: materiales
+    meta: { many_collection: stocks, many_field: material_id, one_collection: materiales, one_field: stocks, system: false }
+    schema:
+      table: stocks
+      column: material_id
+      foreign_key_table: materiales
+      foreign_key_column: id
+      constraint_name: stocks_material_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+
+  # --- movimientos_stock ---
+  - collection: movimientos_stock
+    field: tenant_id
+    related_collection: tenants
+    meta: { many_collection: movimientos_stock, many_field: tenant_id, one_collection: tenants, one_field: movimientos_stock, system: false }
+    schema:
+      table: movimientos_stock
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: movimientos_stock_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: movimientos_stock
+    field: stock_id
+    related_collection: stocks
+    meta: { many_collection: movimientos_stock, many_field: stock_id, one_collection: stocks, one_field: null, system: false }
+    schema:
+      table: movimientos_stock
+      column: stock_id
+      foreign_key_table: stocks
+      foreign_key_column: id
+      constraint_name: movimientos_stock_stock_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+  - collection: movimientos_stock
+    field: tarea_id
+    related_collection: tareas
+    meta: { many_collection: movimientos_stock, many_field: tarea_id, one_collection: tareas, one_field: null, system: false }
+    schema:
+      table: movimientos_stock
+      column: tarea_id
+      foreign_key_table: tareas
+      foreign_key_column: id
+      constraint_name: movimientos_stock_tarea_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+  - collection: movimientos_stock
+    field: ubicacion_id
+    related_collection: ubicaciones
+    meta: { many_collection: movimientos_stock, many_field: ubicacion_id, one_collection: ubicaciones, one_field: null, system: false }
+    schema:
+      table: movimientos_stock
+      column: ubicacion_id
+      foreign_key_table: ubicaciones
+      foreign_key_column: id
+      constraint_name: movimientos_stock_ubicacion_id_foreign
+      on_update: CASCADE
+      on_delete: RESTRICT
+  - collection: movimientos_stock
+    field: material_id
+    related_collection: materiales
+    meta: { many_collection: movimientos_stock, many_field: material_id, one_collection: materiales, one_field: null, system: false }
+    schema:
+      table: movimientos_stock
+      column: material_id
+      foreign_key_table: materiales
+      foreign_key_column: id
+      constraint_name: movimientos_stock_material_id_foreign
+      on_update: CASCADE
+      on_delete: RESTRICT
+  - collection: movimientos_stock
+    field: usuario_interno_id
+    related_collection: usuarios_internos
+    meta: { many_collection: movimientos_stock, many_field: usuario_interno_id, one_collection: usuarios_internos, one_field: null, system: false }
+    schema:
+      table: movimientos_stock
+      column: usuario_interno_id
+      foreign_key_table: usuarios_internos
+      foreign_key_column: id
+      constraint_name: movimientos_stock_usuario_interno_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- tareas ---
+  - collection: tareas
+    field: tenant_id
+    related_collection: tenants
+    meta: { many_collection: tareas, many_field: tenant_id, one_collection: tenants, one_field: tareas, system: false }
+    schema:
+      table: tareas
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: tareas_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: tareas
+    field: ubicacion_id
+    related_collection: ubicaciones
+    meta: { many_collection: tareas, many_field: ubicacion_id, one_collection: ubicaciones, one_field: tareas, system: false }
+    schema:
+      table: tareas
+      column: ubicacion_id
+      foreign_key_table: ubicaciones
+      foreign_key_column: id
+      constraint_name: tareas_ubicacion_id_foreign
+      on_update: CASCADE
+      on_delete: RESTRICT
+  - collection: tareas
+    field: usuario_externo_id
+    related_collection: usuarios_externos
+    meta: { many_collection: tareas, many_field: usuario_externo_id, one_collection: usuarios_externos, one_field: tareas, system: false }
+    schema:
+      table: tareas
+      column: usuario_externo_id
+      foreign_key_table: usuarios_externos
+      foreign_key_column: id
+      constraint_name: tareas_usuario_externo_id_foreign
+      on_update: CASCADE
+      on_delete: RESTRICT
+  - collection: tareas
+    field: usuario_interno_id
+    related_collection: usuarios_internos
+    meta: { many_collection: tareas, many_field: usuario_interno_id, one_collection: usuarios_internos, one_field: tareas_asignadas, system: false }
+    schema:
+      table: tareas
+      column: usuario_interno_id
+      foreign_key_table: usuarios_internos
+      foreign_key_column: id
+      constraint_name: tareas_usuario_interno_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- M2M tareas ↔ materiales vía tareas_materiales ---
+  - collection: tareas_materiales
+    field: tarea_id
+    related_collection: tareas
+    meta: { many_collection: tareas_materiales, many_field: tarea_id, one_collection: tareas, one_field: material_ids, system: false }
+    schema:
+      table: tareas_materiales
+      column: tarea_id
+      foreign_key_table: tareas
+      foreign_key_column: id
+      constraint_name: tareas_materiales_tarea_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: tareas_materiales
+    field: material_id
+    related_collection: materiales
+    meta: { many_collection: tareas_materiales, many_field: material_id, one_collection: materiales, one_field: tareas, system: false }
+    schema:
+      table: tareas_materiales
+      column: material_id
+      foreign_key_table: materiales
+      foreign_key_column: id
+      constraint_name: tareas_materiales_material_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+
+  # --- eventos_tarea ---
+  - collection: eventos_tarea
+    field: tarea_id
+    related_collection: tareas
+    meta: { many_collection: eventos_tarea, many_field: tarea_id, one_collection: tareas, one_field: eventos, system: false }
+    schema:
+      table: eventos_tarea
+      column: tarea_id
+      foreign_key_table: tareas
+      foreign_key_column: id
+      constraint_name: eventos_tarea_tarea_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: eventos_tarea
+    field: usuario_interno_id
+    related_collection: usuarios_internos
+    meta: { many_collection: eventos_tarea, many_field: usuario_interno_id, one_collection: usuarios_internos, one_field: eventos, system: false }
+    schema:
+      table: eventos_tarea
+      column: usuario_interno_id
+      foreign_key_table: usuarios_internos
+      foreign_key_column: id
+      constraint_name: eventos_tarea_usuario_interno_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+  - collection: eventos_tarea
+    field: ubicacion_id
+    related_collection: ubicaciones
+    meta: { many_collection: eventos_tarea, many_field: ubicacion_id, one_collection: ubicaciones, one_field: null, system: false }
+    schema:
+      table: eventos_tarea
+      column: ubicacion_id
+      foreign_key_table: ubicaciones
+      foreign_key_column: id
+      constraint_name: eventos_tarea_ubicacion_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- informes ---
+  - collection: informes
+    field: tenant_id
+    related_collection: tenants
+    meta: { many_collection: informes, many_field: tenant_id, one_collection: tenants, one_field: informes, system: false }
+    schema:
+      table: informes
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: informes_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: informes
+    field: generado_por_usuario_id
+    related_collection: usuarios_internos
+    meta: { many_collection: informes, many_field: generado_por_usuario_id, one_collection: usuarios_internos, one_field: informes, system: false }
+    schema:
+      table: informes
+      column: generado_por_usuario_id
+      foreign_key_table: usuarios_internos
+      foreign_key_column: id
+      constraint_name: informes_generado_por_usuario_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- agente_conversaciones ---
+  - collection: agente_conversaciones
+    field: tenant_id
+    related_collection: tenants
+    meta: { many_collection: agente_conversaciones, many_field: tenant_id, one_collection: tenants, one_field: conversaciones, system: false }
+    schema:
+      table: agente_conversaciones
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: agente_conversaciones_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+  - collection: agente_conversaciones
+    field: usuario_interno_id
+    related_collection: usuarios_internos
+    meta: { many_collection: agente_conversaciones, many_field: usuario_interno_id, one_collection: usuarios_internos, one_field: conversaciones, system: false }
+    schema:
+      table: agente_conversaciones
+      column: usuario_interno_id
+      foreign_key_table: usuarios_internos
+      foreign_key_column: id
+      constraint_name: agente_conversaciones_usuario_interno_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- agente_mensajes ---
+  - collection: agente_mensajes
+    field: conversacion_id
+    related_collection: agente_conversaciones
+    meta: { many_collection: agente_mensajes, many_field: conversacion_id, one_collection: agente_conversaciones, one_field: mensajes, system: false }
+    schema:
+      table: agente_mensajes
+      column: conversacion_id
+      foreign_key_table: agente_conversaciones
+      foreign_key_column: id
+      constraint_name: agente_mensajes_conversacion_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+
+  # --- agente_skills_log ---
+  - collection: agente_skills_log
+    field: conversacion_id
+    related_collection: agente_conversaciones
+    meta: { many_collection: agente_skills_log, many_field: conversacion_id, one_collection: agente_conversaciones, one_field: skills_log, system: false }
+    schema:
+      table: agente_skills_log
+      column: conversacion_id
+      foreign_key_table: agente_conversaciones
+      foreign_key_column: id
+      constraint_name: agente_skills_log_conversacion_id_foreign
+      on_update: CASCADE
+      on_delete: SET NULL
+
+  # --- agente_rag_documentos ---
+  - collection: agente_rag_documentos
+    field: tenant_id
+    related_collection: tenants
+    meta: { many_collection: agente_rag_documentos, many_field: tenant_id, one_collection: tenants, one_field: rag_documentos, system: false }
+    schema:
+      table: agente_rag_documentos
+      column: tenant_id
+      foreign_key_table: tenants
+      foreign_key_column: id
+      constraint_name: agente_rag_documentos_tenant_id_foreign
+      on_update: CASCADE
+      on_delete: CASCADE
+
+# ============================================================
+# PERMISOS POR ROL
+# ============================================================
+# Roles fijos:
+#   tenant_admin = a1111111-1111-1111-1111-111111111111
+#   trabajador   = b2222222-2222-2222-2222-222222222222
+# El super-admin (built-in admin role) no necesita filas de
+# permiso: tiene acceso implícito a todo.
+# El seed/superadmin.json crea los roles con estos UUIDs.
+# ------------------------------------------------------------
+# El filtro multitenant se aplica con validation:
+#   tenant_id: { _eq: "$CURRENT_USER.tenant_id" }
+# en create y en permissions (read/update/delete).
+# ============================================================
+
+permissions:
+
+  # ---------------- tenant_admin: gestión completa de SU tenant ----------------
+  # Colecciones operacionales — todas filtradas por tenant_id
+
+  # tenants: solo lectura del propio
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: tenants
+    action: read
+    permissions:
+      id: { _eq: "$CURRENT_USER.tenant_id" }
+    validation: null
+    fields: ['*']
+    presets: null
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: tenants
+    action: update
+    permissions:
+      id: { _eq: "$CURRENT_USER.tenant_id" }
+    validation: null
+    fields: ['nombre','dominio','configuracion','estado']
+    presets: null
+
+  # planes: solo lectura
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: planes
+    action: read
+    permissions: null
+    validation: null
+    fields: ['*']
+    presets: null
+
+  # suscripciones: solo lectura del propio tenant
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: suscripciones
+    action: read
+    permissions:
+      tenant_id: { _eq: "$CURRENT_USER.tenant_id" }
+    validation: null
+    fields: ['*']
+    presets: null
+
+  # sectores_mercado y plantillas_mercado: solo lectura (marketplace)
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: sectores_mercado
+    action: read
+    permissions:
+      activo: { _eq: true }
+    validation: null
+    fields: ['*']
+    presets: null
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: plantillas_mercado
+    action: read
+    permissions:
+      activa: { _eq: true }
+    validation: null
+    fields: ['*']
+    presets: null
+
+  # instalaciones_mercado: lectura y creación (con tenant_id forzado)
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: instalaciones_mercado
+    action: read
+    permissions:
+      tenant_id: { _eq: "$CURRENT_USER.tenant_id" }
+    validation: null
+    fields: ['*']
+    presets: null
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: instalaciones_mercado
+    action: create
+    permissions: null
+    validation:
+      tenant_id: { _eq: "$CURRENT_USER.tenant_id" }
+    fields: ['*']
+    presets:
+      tenant_id: "$CURRENT_USER.tenant_id"
+
+  # Macro para colecciones operacionales: helper reutilizable
+  # (lo expandimos por colección por compatibilidad con el snapshot)
+
+  # ubicaciones
+  - { role: a1111111-1111-1111-1111-111111111111, collection: ubicaciones, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: ubicaciones, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: ubicaciones, action: update,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: ubicaciones, action: delete,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # usuarios_externos
+  - { role: a1111111-1111-1111-1111-111111111111, collection: usuarios_externos, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: usuarios_externos, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: usuarios_externos, action: update,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: usuarios_externos, action: delete,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # usuarios_internos
+  - { role: a1111111-1111-1111-1111-111111111111, collection: usuarios_internos, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: usuarios_internos, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: usuarios_internos, action: update,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: usuarios_internos, action: delete,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # materiales
+  - { role: a1111111-1111-1111-1111-111111111111, collection: materiales, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: materiales, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: materiales, action: update,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: materiales, action: delete,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # stocks
+  - { role: a1111111-1111-1111-1111-111111111111, collection: stocks, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: stocks, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: stocks, action: update,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: stocks, action: delete,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # movimientos_stock
+  - { role: a1111111-1111-1111-1111-111111111111, collection: movimientos_stock, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: movimientos_stock, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: movimientos_stock, action: update,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # tareas
+  - { role: a1111111-1111-1111-1111-111111111111, collection: tareas, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: tareas, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: tareas, action: update,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: tareas, action: delete,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # tareas_materiales (junction)
+  - { role: a1111111-1111-1111-1111-111111111111, collection: tareas_materiales, action: read,   permissions: null, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: tareas_materiales, action: create, permissions: null, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: tareas_materiales, action: update, permissions: null, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: tareas_materiales, action: delete, permissions: null, validation: null, fields: ['*'], presets: null }
+
+  # eventos_tarea: solo lectura + create (los crea el sistema/hook)
+  - { role: a1111111-1111-1111-1111-111111111111, collection: eventos_tarea, action: read,   permissions: null, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: eventos_tarea, action: create, permissions: null, validation: null, fields: ['*'], presets: null }
+
+  # informes
+  - { role: a1111111-1111-1111-1111-111111111111, collection: informes, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: informes, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: informes, action: update,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: informes, action: delete,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # agente_conversaciones
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_conversaciones, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_conversaciones, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_conversaciones, action: update,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_conversaciones, action: delete,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # agente_mensajes: read + create
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_mensajes, action: read,   permissions: null, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_mensajes, action: create, permissions: null, validation: null, fields: ['*'], presets: null }
+
+  # agente_skills_log: solo lectura (lo escribe el agente IA con service token)
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_skills_log, action: read, permissions: null, validation: null, fields: ['*'], presets: null }
+
+  # agente_rag_documentos
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_rag_documentos, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_rag_documentos, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_rag_documentos, action: update,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: a1111111-1111-1111-1111-111111111111, collection: agente_rag_documentos, action: delete,  permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # directus_users: el admin del tenant puede leer/actualizar usuarios de su tenant
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: directus_users
+    action: read
+    permissions:
+      tenant_id: { _eq: "$CURRENT_USER.tenant_id" }
+    validation: null
+    fields: ['id','first_name','last_name','email','role','tenant_id','status','avatar','last_access']
+    presets: null
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: directus_users
+    action: update
+    permissions:
+      tenant_id: { _eq: "$CURRENT_USER.tenant_id" }
+    validation: null
+    fields: ['first_name','last_name','role','status','avatar','password']
+    presets: null
+  - role: a1111111-1111-1111-1111-111111111111
+    collection: directus_users
+    action: create
+    permissions: null
+    validation:
+      tenant_id: { _eq: "$CURRENT_USER.tenant_id" }
+    fields: ['id','first_name','last_name','email','role','tenant_id','status','password']
+    presets:
+      tenant_id: "$CURRENT_USER.tenant_id"
+
+  # ---------------- trabajador: acceso limitado (read + update de tareas) ----------------
+  # Solo ve y trabaja con tareas/stocks/materiales de su tenant
+
+  - { role: b2222222-2222-2222-2222-222222222222, collection: tenants, action: read, permissions: { id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['id','nombre','slug','dominio'], presets: null }
+
+  - { role: b2222222-2222-2222-2222-222222222222, collection: ubicaciones, action: read, permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: usuarios_externos, action: read, permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: materiales, action: read, permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: stocks, action: read, permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: stocks, action: update, permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['cantidad','fecha_actualizacion'], presets: null }
+
+  - { role: b2222222-2222-2222-2222-222222222222, collection: tareas, action: read, permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: tareas, action: update, permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['estado','fecha_inicio','fecha_fin','duracion_minutos','usuario_interno_id','metadata'], presets: null }
+
+  - { role: b2222222-2222-2222-2222-222222222222, collection: tareas_materiales, action: read, permissions: null, validation: null, fields: ['*'], presets: null }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: tareas_materiales, action: create, permissions: null, validation: null, fields: ['*'], presets: null }
+
+  - { role: b2222222-2222-2222-2222-222222222222, collection: movimientos_stock, action: read, permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: movimientos_stock, action: create, permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+
+  - { role: b2222222-2222-2222-2222-222222222222, collection: eventos_tarea, action: read, permissions: null, validation: null, fields: ['*'], presets: null }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: eventos_tarea, action: create, permissions: null, validation: null, fields: ['*'], presets: null }
+
+  - { role: b2222222-2222-2222-2222-222222222222, collection: informes, action: read, permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+
+  # Agente IA: el trabajador solo puede iniciar conversaciones y ver las suyas
+  - { role: b2222222-2222-2222-2222-222222222222, collection: agente_conversaciones, action: read,    permissions: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, validation: null, fields: ['*'], presets: null }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: agente_conversaciones, action: create,  permissions: null, validation: { tenant_id: { _eq: "$CURRENT_USER.tenant_id" } }, fields: ['*'], presets: { tenant_id: "$CURRENT_USER.tenant_id" } }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: agente_mensajes, action: read,   permissions: null, validation: null, fields: ['*'], presets: null }
+  - { role: b2222222-2222-2222-2222-222222222222, collection: agente_mensajes, action: create, permissions: null, validation: null, fields: ['*'], presets: null }
+
+  # directus_users: el trabajador solo se ve/edita a sí mismo
+  - role: b2222222-2222-2222-2222-222222222222
+    collection: directus_users
+    action: read
+    permissions:
+      id: { _eq: "$CURRENT_USER.id" }
+    validation: null
+    fields: ['id','first_name','last_name','email','role','tenant_id','avatar']
+    presets: null
+  - role: b2222222-2222-2222-2222-222222222222
+    collection: directus_users
+    action: update
+    permissions:
+      id: { _eq: "$CURRENT_USER.id" }
+    validation: null
+    fields: ['first_name','last_name','avatar','password']
+    presets: null
+
+# ============================================================
+# PRESETS (vacío — los seed/* cargan los datos reales)
+# ============================================================
+presets: []

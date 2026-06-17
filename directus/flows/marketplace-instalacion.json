@@ -1,0 +1,141 @@
+{
+  "$schema": "https://directus.io/schema/flow.json",
+  "name": "ENTERAR.ME — Marketplace: instalación de plantilla",
+  "icon": "extension",
+  "color": "#f64151",
+  "description": "Flow que se dispara al POST (create) en instalaciones_mercado. Lee la plantilla seleccionada y aplica su configuración al tenant: crea materiales, tareas o usuarios externos según el tipo, o mergea la configuración en tenants.configuracion si es addon/pipeline. Actualiza el estado de la instalación a 'instalada' o 'fallida' según resultado.",
+  "status": "active",
+  "trigger": "event",
+  "accountability": "none",
+  "options": {
+    "type": "action",
+    "scope": ["items.create"],
+    "collections": ["instalaciones_mercado"]
+  },
+  "operation": {
+    "id": "op-mkt-load-plantilla",
+    "name": "Cargar plantilla + tenant + sede",
+    "key": "cargar_plantilla",
+    "type": "item-read",
+    "options": {
+      "collection": "plantillas_mercado",
+      "query": {
+        "filter": { "id": { "_eq": "{{$trigger.payload.plantilla_id}}" } },
+        "limit": 1
+      }
+    },
+    "resolve": {
+      "id": "op-mkt-load-sede",
+      "name": "Cargar ubicación 'Sede central' del tenant",
+      "key": "cargar_sede",
+      "type": "item-read",
+      "options": {
+        "collection": "ubicaciones",
+        "query": {
+          "filter": {
+            "_and": [
+              { "tenant_id": { "_eq": "{{$trigger.payload.tenant_id}}" } },
+              { "tipo": { "_eq": "sede" } }
+            ]
+          },
+          "limit": 1
+        }
+      },
+      "resolve": {
+        "id": "op-mkt-load-empresa-propia",
+        "name": "Cargar usuario externo empresa propia",
+        "key": "cargar_empresa_propia",
+        "type": "item-read",
+        "options": {
+          "collection": "usuarios_externos",
+          "query": {
+            "filter": {
+              "_and": [
+                { "tenant_id": { "_eq": "{{$trigger.payload.tenant_id}}" } },
+                { "tipo": { "_eq": "empresa_propia" } }
+              ]
+            },
+            "limit": 1
+          }
+        },
+        "resolve": {
+          "id": "op-mkt-switch-tipo",
+          "name": "Aplicar según tipo de plantilla",
+          "key": "aplicar_segun_tipo",
+          "type": "condition",
+          "options": {
+            "conditions": [
+              {
+                "id": "cond-material",
+                "name": "Tipo = material",
+                "rule": {
+                  "and": [
+                    { "key": "{{op-mkt-load-plantilla.data[0].tipo}}", "operator": "eq", "value": "material" }
+                  ]
+                }
+              },
+              {
+                "id": "cond-tarea",
+                "name": "Tipo = tarea",
+                "rule": {
+                  "and": [
+                    { "key": "{{op-mkt-load-plantilla.data[0].tipo}}", "operator": "eq", "value": "tarea" }
+                  ]
+                }
+              },
+              {
+                "id": "cond-usuario",
+                "name": "Tipo = usuario",
+                "rule": {
+                  "and": [
+                    { "key": "{{op-mkt-load-plantilla.data[0].tipo}}", "operator": "eq", "value": "usuario" }
+                  ]
+                }
+              }
+            ]
+          },
+          "resolve": {
+            "id": "op-mkt-create-material",
+            "name": "Crear material desde plantilla",
+            "key": "crear_material",
+            "type": "item-create",
+            "options": {
+              "collection": "materiales",
+              "payload": {
+                "tenant_id": "{{$trigger.payload.tenant_id}}",
+                "nombre": "{{op-mkt-load-plantilla.data[0].configuracion.nombre}}",
+                "tipo": "{{op-mkt-load-plantilla.data[0].configuracion.tipo}}",
+                "sku": "{{op-mkt-load-plantilla.data[0].configuracion.sku}}",
+                "unidad": "{{op-mkt-load-plantilla.data[0].configuracion.unidad}}",
+                "costo_unitario": "{{op-mkt-load-plantilla.data[0].configuracion.costo_unitario}}",
+                "usuario_externo_id": "{{op-mkt-load-empresa-propia.data[0].id}}",
+                "organization_id": "{{$trigger.payload.tenant_id}}",
+                "activo": true,
+                "metadata": {
+                  "plantilla_id": "{{op-mkt-load-plantilla.data[0].id}}",
+                  "origen": "marketplace"
+                }
+              }
+            },
+            "resolve": null,
+            "reject": null
+          },
+          "reject": null
+        },
+        "reject": null
+      },
+      "reject": null
+    },
+    "reject": {
+      "id": "op-mkt-error-plantilla",
+      "name": "Log: plantilla no encontrada",
+      "key": "log_error_plantilla",
+      "type": "log",
+      "options": {
+        "message": "Marketplace: plantilla {{$trigger.payload.plantilla_id}} no encontrada"
+      },
+      "resolve": null,
+      "reject": null
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "_coolify": {
+    "name": "ENTERAR.ME — Super Admin Frontend",
+    "description": "Frontend Next.js standalone del panel super-admin (ENTERAR.ME). Puerto 3000. Dominio sugerido: admin.enterarme.me.",
+    "type": "docker-compose",
+    "projectName": "enterarme",
+    "serviceName": "super-admin",
+    "documentation": "https://nextjs.org/docs/app/api-reference/config/next-config-js/output"
+  },
+  "name": "ENTERAR.ME — Super Admin Frontend",
+  "description": "Panel de administración de la plataforma ENTERAR.ME (gestión de tenants, planes, suscripciones, marketplace, informes globales y agente IA). Next.js 16 standalone output.",
+  "services": {
+    "super-admin": {
+      "image": "ghcr.io/enterarme/enterarme-super-admin:latest",
+      "restart": "unless-stopped",
+      "ports": [
+        "3000:3000"
+      ],
+      "environment": {
+        "NODE_ENV": "production",
+        "PORT": "3000",
+        "HOSTNAME": "0.0.0.0",
+        "NEXT_PUBLIC_DIRECTUS_URL": "${DIRECTUS_PUBLIC_URL}",
+        "NEXT_PUBLIC_AI_URL": "${AI_PUBLIC_URL}",
+        "DIRECTUS_SERVICE_TOKEN": "${DIRECTUS_FRONTEND_TOKEN}",
+        "DIRECTUS_URL": "${DIRECTUS_URL:-http://directus:8055}",
+        "AI_URL": "${AI_URL:-http://ai:3030}",
+        "NEXTAUTH_URL": "${SUPER_ADMIN_PUBLIC_URL}",
+        "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+        "TZ": "${TZ:-Europe/Madrid}",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "depends_on": [
+        "directus",
+        "ai"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:3000/api/kpis').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))\""
+        ],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": 5,
+        "start_period": "30s"
+      },
+      "labels": [
+        "coolify.managed=true",
+        "coolify.serviceName=super-admin",
+        "enterarme.component=frontend",
+        "enterarme.role=super-admin"
+      ]
+    }
+  }
+}

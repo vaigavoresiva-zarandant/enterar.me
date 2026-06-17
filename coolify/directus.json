@@ -1,0 +1,75 @@
+{
+  "_coolify": {
+    "name": "ENTERAR.ME — Directus",
+    "description": "Backend headless CMS para ENTERAR.ME. Image: ghcr.io/<owner>/enterarme-directus:latest. Puerto interno 8055. Depende de Postgres. Variables sensibles marcadas con __SECRET__.",
+    "type": "docker-compose",
+    "projectName": "enterarme",
+    "serviceName": "directus",
+    "documentation": "https://docs.directus.io/self-hosted/quickstart.html"
+  },
+  "name": "ENTERAR.ME — Directus",
+  "description": "Backend headless CMS para ENTERAR.ME. API REST/GraphQL en /api y /graphql, panel en /. Puerto 8055.",
+  "services": {
+    "directus": {
+      "image": "ghcr.io/enterarme/enterarme-directus:latest",
+      "restart": "unless-stopped",
+      "ports": [
+        "8055:8055"
+      ],
+      "environment": {
+        "KEY": "${DIRECTUS_KEY}",
+        "SECRET": "${DIRECTUS_SECRET}",
+        "ADMIN_EMAIL": "${DIRECTUS_ADMIN_EMAIL}",
+        "ADMIN_PASSWORD": "${DIRECTUS_ADMIN_PASSWORD}",
+        "DB_CLIENT": "pg",
+        "DB_HOST": "${POSTGRES_HOST}",
+        "DB_PORT": "${POSTGRES_PORT:-5432}",
+        "DB_USER": "${POSTGRES_USER}",
+        "DB_PASSWORD": "${POSTGRES_PASSWORD}",
+        "DB_DATABASE": "${POSTGRES_DB}",
+        "PUBLIC_URL": "${DIRECTUS_PUBLIC_URL}",
+        "CORS_ENABLED": "true",
+        "CORS_ORIGIN": "${DIRECTUS_CORS_ORIGIN}",
+        "WEBSOCKETS_ENABLED": "true",
+        "MAX_PAYLOAD_SIZE": "100mb",
+        "STORAGE_LOCATIONS": "local",
+        "STORAGE_LOCAL_DRIVER": "local",
+        "STORAGE_LOCAL_ROOT": "/directus/uploads",
+        "AI_SERVICE_URL": "${AI_URL}",
+        "DIRECTUS_SERVICE_TOKEN": "${DIRECTUS_SERVICE_TOKEN}",
+        "TZ": "${TZ:-Europe/Madrid}",
+        "NODE_ENV": "production"
+      },
+      "volumes": [
+        "directus_uploads:/directus/uploads",
+        "directus_extensions:/directus/extensions"
+      ],
+      "depends_on": [
+        "postgres"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:8055/server/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": 5,
+        "start_period": "40s"
+      },
+      "labels": [
+        "coolify.managed=true",
+        "coolify.serviceName=directus",
+        "enterarme.component=backend"
+      ]
+    }
+  },
+  "volumes": {
+    "directus_uploads": {
+      "driver": "local"
+    },
+    "directus_extensions": {
+      "driver": "local"
+    }
+  }
+}

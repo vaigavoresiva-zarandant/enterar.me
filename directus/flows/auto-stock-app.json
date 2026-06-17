@@ -1,0 +1,107 @@
+{
+  "$schema": "https://directus.io/schema/flow.json",
+  "name": "ENTERAR.ME — Auto-stock App ENTERAR.ME",
+  "icon": "inventory",
+  "color": "#fcbf28",
+  "description": "Flow que se dispara cuando se crea una tarea con titulo='Configurar app' (generada por el onboarding). Crea automáticamente la tarea 'Incluir en stock de Sede central el material no fungible App ENTERAR.ME' asociada a la misma ubicación + usuario externo. Sirve como respaldo del endpoint de onboarding (que ya crea ambas tareas en la misma transacción).",
+  "status": "active",
+  "trigger": "event",
+  "accountability": "none",
+  "options": {
+    "type": "action",
+    "scope": ["items.create"],
+    "collections": ["tareas"]
+  },
+  "operation": {
+    "id": "op-auto-stock-filter",
+    "name": "Filtrar: ¿es tarea 'Configurar app'?",
+    "key": "filtrar_tarea_configurar_app",
+    "type": "condition",
+    "options": {
+      "conditions": [
+        {
+          "id": "cond-titulo-configurar-app",
+          "name": "Titulo = Configurar app",
+          "rule": {
+            "and": [
+              {
+                "key": "$trigger.payload.titulo",
+                "operator": "eq",
+                "value": "Configurar app"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "resolve": {
+      "id": "op-auto-stock-find-material",
+      "name": "Encontrar material App ENTERAR.ME",
+      "key": "encontrar_material_app",
+      "type": "item-read",
+      "options": {
+        "collection": "materiales",
+        "query": {
+          "filter": {
+            "_and": [
+              { "tenant_id": { "_eq": "{{$trigger.payload.tenant_id}}" } },
+              { "sku": { "_eq": "ENTERARME-APP" } }
+            ]
+          },
+          "limit": 1
+        }
+      },
+      "resolve": {
+        "id": "op-auto-stock-create-task",
+        "name": "Crear tarea 'Incluir en stock...'",
+        "key": "crear_tarea_stock",
+        "type": "item-create",
+        "options": {
+          "collection": "tareas",
+          "payload": {
+            "tenant_id": "{{$trigger.payload.tenant_id}}",
+            "ubicacion_id": "{{$trigger.payload.ubicacion_id}}",
+            "usuario_externo_id": "{{$trigger.payload.usuario_externo_id}}",
+            "usuario_interno_id": "{{$trigger.payload.usuario_interno_id}}",
+            "titulo": "Incluir en stock de Sede central el material no fungible App ENTERAR.ME",
+            "descripcion": "Alta en stock del material 'App ENTERAR.ME' en la ubicación 'Sede central'. Generada automáticamente por el flow 'Auto-stock App ENTERAR.ME'.",
+            "estado": "pendiente",
+            "prioridad": "alta",
+            "metadata": {
+              "sistema": true,
+              "auto_generado": true,
+              "tipo_onboarding": "alta_stock_app",
+              "material_id": "{{$last.data[0].id}}",
+              "ubicacion_id": "{{$trigger.payload.ubicacion_id}}",
+              "origen_flow": "auto-stock-app"
+            }
+          }
+        },
+        "resolve": {
+          "id": "op-auto-stock-log",
+          "name": "Log resultado",
+          "key": "log_resultado",
+          "type": "log",
+          "options": {
+            "message": "Tarea de stock creada: {{$last.data.id}}"
+          },
+          "resolve": null,
+          "reject": null
+        },
+        "reject": null
+      },
+      "reject": {
+        "id": "op-auto-stock-no-material",
+        "name": "No se encontró el material",
+        "key": "log_no_material",
+        "type": "log",
+        "options": {
+          "message": "Auto-stock: no se encontró el material 'App ENTERAR.ME' para el tenant {{$trigger.payload.tenant_id}}"
+        },
+        "resolve": null,
+        "reject": null
+      }
+    },
+    "reject": null
+  }
+}

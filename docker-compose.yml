@@ -1,0 +1,115 @@
+# ============================================================
+# ENTERAR.ME — Entorno de desarrollo local
+# Levanta: postgres + directus + ai + super-admin + tenant-admin
+# ============================================================
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-enterarme}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-enterarme}
+      POSTGRES_DB: ${POSTGRES_DB:-enterarme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-enterarme}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  directus:
+    build:
+      context: ./directus
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8055:8055"
+    environment:
+      KEY: ${DIRECTUS_KEY:-enterarme-dev-key}
+      SECRET: ${DIRECTUS_SECRET:-enterarme-dev-secret}
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL:-admin@enterarme.me}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD:-admin123}
+      DB_CLIENT: pg
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-enterarme}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-enterarme}
+      DB_DATABASE: ${POSTGRES_DB:-enterarme}
+      PUBLIC_URL: http://localhost:8055
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: "http://localhost:3000,http://localhost:3001"
+      WEBSOCKETS_ENABLED: "true"
+      AI_SERVICE_URL: http://ai:3030
+    volumes:
+      - directus_uploads:/directus/uploads
+      - directus_extensions:/directus/extensions
+
+  ai:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3030:3030"
+    environment:
+      PORT: 3030
+      DATABASE_URL: postgresql://${POSTGRES_USER:-enterarme}:${POSTGRES_PASSWORD:-enterarme}@postgres:5432/${POSTGRES_DB:-enterarme}
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-enterarme-agent}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_SERVICE_TOKEN: ${DIRECTUS_SERVICE_TOKEN:-}
+      JWT_SECRET: ${DIRECTUS_SECRET:-enterarme-dev-secret}
+
+  super-admin:
+    build:
+      context: ./apps/super-admin
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - directus
+      - ai
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_DIRECTUS_URL: http://localhost:8055
+      NEXT_PUBLIC_AI_URL: http://localhost:3030
+      DIRECTUS_SERVICE_TOKEN: ${DIRECTUS_SERVICE_TOKEN:-}
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${DIRECTUS_SECRET:-enterarme-dev-secret}
+      NODE_ENV: development
+
+  tenant-admin:
+    build:
+      context: ./apps/tenant-admin
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - directus
+      - ai
+    ports:
+      - "3001:3000"
+    environment:
+      NEXT_PUBLIC_DIRECTUS_URL: http://localhost:8055
+      NEXT_PUBLIC_AI_URL: http://localhost:3030
+      DIRECTUS_SERVICE_TOKEN: ${DIRECTUS_SERVICE_TOKEN:-}
+      NEXTAUTH_URL: http://localhost:3001
+      NEXTAUTH_SECRET: ${DIRECTUS_SECRET:-enterarme-dev-secret}
+      NODE_ENV: development
+
+volumes:
+  postgres_data:
+  directus_uploads:
+  directus_extensions:
